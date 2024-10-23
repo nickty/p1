@@ -1,4 +1,4 @@
-name: Deploy to DigitalOcean ssh to make
+name: Deploy to DigitalOcean
 
 on:
   push:
