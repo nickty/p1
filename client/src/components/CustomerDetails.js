@@ -4,7 +4,9 @@ import { getCustomer, getNotes, createNote, getOrders, createOrder } from '../se
 
 const CustomerDetails = () => {
   // const { id } = useParams();
-  const id = window.location.pathname.split('/').pop();
+  // const id = window.location.pathname.split('/').pop();
+  const pathParts = window.location.pathname.split('/');
+  const id = pathParts[pathParts.length - 1];
   const [customer, setCustomer] = useState(null);
   const [notes, setNotes] = useState([]);
   const [orders, setOrders] = useState([]);
