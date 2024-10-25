@@ -13,6 +13,7 @@ export const createCustomer = async (customer) => {
 };
 
 export const getCustomer = async (id) => {
+  console.log("check id", id)
   const response = await axios.get(`${API_URL}/customers/${id}`);
   return response.data;
 };
