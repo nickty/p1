@@ -1,26 +1,63 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
 import CustomerList from './components/CustomerList';
 import CustomerDetails from './components/CustomerDetails';
+import './App.css';
 
 const App = () => {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [customerDropdownOpen, setCustomerDropdownOpen] = useState(false);
+
   return (
     <Router>
-      <div className="min-h-screen bg-gray-100">
-        <nav className="bg-gray-800 text-white p-4">
-          <ul className="flex space-x-4">
-            <li>
-              <Link to="/" className="hover:text-gray-300">Home</Link>
-            </li>
-            <li>
-              <Link to="/customers" className="hover:text-gray-300">Customers</Link>
-            </li>
-          </ul>
+      <div className="app-container">
+        <nav className="navbar">
+          <div className="navbar-container">
+            <div className="navbar-left">
+              <Link to="/" className="navbar-logo">CRM</Link>
+              <div className="dropdown">
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="dropdown-button"
+                >
+                  Menu
+                </button>
+                {dropdownOpen && (
+                  <div className="dropdown-content">
+                    <Link to="/customers" onClick={() => setDropdownOpen(false)}>Customers</Link>
+                    <Link to="/" onClick={() => setDropdownOpen(false)}>Home</Link>
+                    <Link to="/about" onClick={() => setDropdownOpen(false)}>About Us</Link>
+                  </div>
+                )}
+              </div>
+              <div className="dropdown">
+                <button
+                  onClick={() => setCustomerDropdownOpen(!customerDropdownOpen)}
+                  className="dropdown-button"
+                >
+                  Customer Actions
+                </button>
+                {customerDropdownOpen && (
+                  <div className="dropdown-content">
+                    <Link to="/customers" onClick={() => setCustomerDropdownOpen(false)}>Add New Customer</Link>
+                    <Link to="/customers/view-all" onClick={() => setCustomerDropdownOpen(false)}>View All Customers</Link>
+                    <Link to="/customers/reports" onClick={() => setCustomerDropdownOpen(false)}>Customer Reports</Link>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="navbar-right">
+              <Link to="/profile" className="navbar-link">Profile</Link>
+            </div>
+          </div>
         </nav>
 
-        <div className="container mx-auto p-4">
+        <div className="content-container">
           <Routes>
-            <Route path="/" element={<h1 className="text-3xl font-bold text-center mt-8">Welcome to CRM</h1>} />
+            <Route
+              path="/"
+              element={<h1 className="home-title">Welcome to CRM</h1>}
+            />
             <Route path="/customers" element={<CustomerList />} />
             <Route path="/customer/:id" element={<CustomerDetails />} />
           </Routes>
