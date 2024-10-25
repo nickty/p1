@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getCustomer, getNotes, createNote, getOrders, createOrder } from '../services/api';
 
-const CustomerDetails = ({id}) => {
-  // const { id } = useParams();
+const CustomerDetails = () => {
+  const { id } = useParams();
   const [customer, setCustomer] = useState(null);
   const [notes, setNotes] = useState([]);
   const [orders, setOrders] = useState([]);
   const [newNote, setNewNote] = useState({ type: 'call', content: '', salesAgent: '' });
   const [newOrder, setNewOrder] = useState({ amount: 0, description: '' });
+
+  console.log("are you getting the id", id)
 
   useEffect(() => {
     fetchCustomerDetails();
