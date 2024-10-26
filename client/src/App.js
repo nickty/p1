@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
 import CustomerList from './components/CustomerList';
 import CustomerDetails from './components/CustomerDetails';
@@ -7,6 +7,32 @@ import './App.css';
 const App = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [customerDropdownOpen, setCustomerDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const customerDropdownRef = useRef(null);
+
+  // Handle clicks outside dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
+        setDropdownOpen(false);
+      }
+
+      if (
+        customerDropdownRef.current &&
+        !customerDropdownRef.current.contains(event.target)
+      ) {
+        setCustomerDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <Router>
@@ -15,7 +41,7 @@ const App = () => {
           <div className="navbar-container">
             <div className="navbar-left">
               <Link to="/" className="navbar-logo">CRM</Link>
-              <div className="dropdown">
+              <div className="dropdown" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="dropdown-button"
@@ -30,7 +56,7 @@ const App = () => {
                   </div>
                 )}
               </div>
-              <div className="dropdown">
+              <div className="dropdown" ref={customerDropdownRef}>
                 <button
                   onClick={() => setCustomerDropdownOpen(!customerDropdownOpen)}
                   className="dropdown-button"
@@ -39,7 +65,7 @@ const App = () => {
                 </button>
                 {customerDropdownOpen && (
                   <div className="dropdown-content">
-                    <Link to="/customers" onClick={() => setCustomerDropdownOpen(false)}>Add New Customer</Link>
+                    <Link to="/customers/add" onClick={() => setCustomerDropdownOpen(false)}>Add New Customer</Link>
                     <Link to="/customers/view-all" onClick={() => setCustomerDropdownOpen(false)}>View All Customers</Link>
                     <Link to="/customers/reports" onClick={() => setCustomerDropdownOpen(false)}>Customer Reports</Link>
                   </div>
