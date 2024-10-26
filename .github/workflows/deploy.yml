@@ -1,4 +1,4 @@
-name: Deploy to DigitalOcean workig
+name: Deploy to DigitalOcean
 
 on:
   push:
@@ -17,7 +17,10 @@ jobs:
           host: ${{ secrets.DROPLET_IP }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.DROPLET_SSH_KEY }}
+          script_timeout: 1200 # Increase to 20 minutes
           script: |
             cd /var/www/crm-app
             git pull origin main
+            npm install --no-audit --legacy-peer-deps
+            npm run build
             bash deploy.sh
