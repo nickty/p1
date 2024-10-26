@@ -10,16 +10,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Allow CORS for your specific frontend domain
-const allowedOrigins = ['http://localhost:3000', 'http://134.209.246.121']; // Add your production domain here
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  }
-}));
+const corsOptions = {
+  origin: 'http://134.209.246.121', // Replace this with your actual server IP or domain
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Connect to MongoDB using the URI from environment variables
