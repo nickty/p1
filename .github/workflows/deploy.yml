@@ -1,9 +1,17 @@
+name: Deploy to DigitalOcean workig
+
+on:
+  push:
+    branches:
+      - main
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 20  # Increase the timeout limit
     steps:
       - uses: actions/checkout@v2
+      
       - name: Deploy to DigitalOcean Droplet
         uses: appleboy/ssh-action@master
         with:
