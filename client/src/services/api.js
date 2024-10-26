@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-// const API_URL = 'http://localhost:5000/api';
-const API_URL = axios.create({
-  baseURL: 'http://134.209.246.121:5000/api', // Use your server's IP
-});
+const API_URL = 'http://134.209.246.121:5000/api';
+// const API_URL = axios.create({
+//   baseURL: 'http://134.209.246.121:5000/api', // Use your server's IP
+// });
 
 export const getCustomers = async () => {
   const response = await axios.get(`${API_URL}/customers`);
