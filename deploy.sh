@@ -18,6 +18,7 @@ cd /var/www/crm-app
 git pull origin main
 
 # Install dependencies
+rm -rf client/build
 npm install
 cd client && npm install && npm run build && cd ..
 
