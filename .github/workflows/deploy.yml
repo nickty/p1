@@ -1,6 +1,6 @@
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest lkjlk
     steps:
       - uses: actions/checkout@v2
       - name: Set up Node.js
