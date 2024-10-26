@@ -9,24 +9,31 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// Allow CORS for your specific frontend domain
+const allowedOrigins = ['http://localhost:3000', 'http://134.209.246.121']; // Add your production domain here
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
 app.use(express.json());
 
+// Connect to MongoDB using the URI from environment variables
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  useCreateIndex: true,
 });
 
+// Mongoose models for customers, notes, and orders
 const customerSchema = new mongoose.Schema({
   name: String,
   email: String,
   phone: String,
-  stage: {
-    type: String,
-    enum: ['new', 'engaged', 'ordered', 'closed lost'],
-    default: 'new',
-  },
+  stage: { type: String, enum: ['new', 'engaged', 'ordered', 'closed lost'], default: 'new' },
   totalRevenue: { type: Number, default: 0 },
   touchpoints: { type: Number, default: 0 },
 });
@@ -50,7 +57,7 @@ const Customer = mongoose.model('Customer', customerSchema);
 const Note = mongoose.model('Note', noteSchema);
 const Order = mongoose.model('Order', orderSchema);
 
-// API Routes
+// API routes for customers, notes, and orders
 app.get('/api/customers', async (req, res) => {
   try {
     const customers = await Customer.find();
@@ -131,8 +138,7 @@ app.post('/api/customers/:id/orders', async (req, res) => {
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'client/build')));
 
-// The "catchall" handler: for any request that doesn't
-// match one above, send back React's index.html file.
+// The "catchall" handler for any request that doesn't match above routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
