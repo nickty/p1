@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
@@ -21,16 +21,18 @@ jobs:
       - name: Cache node modules
         uses: actions/cache@v2
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          path: client/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('client/**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
       - name: Install dependencies
         run: npm install --loglevel=error --silent
+        working-directory: client
 
       - name: Build frontend
         run: npm run build --loglevel=error # Remove --silent to see detailed logs
+        working-directory: client # Ensure we're in the correct directory
 
       - name: Deploy to DigitalOcean Droplet
         uses: appleboy/ssh-action@master
