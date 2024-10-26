@@ -1,4 +1,4 @@
-name: Deploy to DigitalOcean working
+name: Deploy to DigitalOcean workig
 
 on:
   push:
@@ -10,15 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-
-      - name: Use Node.js 18
-        run: |
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          nvm install 18
-          nvm use 18
-
+      
       - name: Deploy to DigitalOcean Droplet
         uses: appleboy/ssh-action@master
         with:
