@@ -1,4 +1,32 @@
-name: Deploy to DigitalOcean
+# name: Deploy to DigitalOcean
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v2
+      
+#       - name: Deploy to DigitalOcean Droplet
+#         uses: appleboy/ssh-action@master
+#         with:
+#           host: ${{ secrets.DROPLET_IP }}
+#           username: ${{ secrets.DROPLET_USER }}
+#           key: ${{ secrets.DROPLET_SSH_KEY }}
+#           script_timeout: 1200 # Increase to 20 minutes
+#           script: |
+#             cd /var/www/crm-app
+#             git pull origin main
+#             npm install --no-audit --legacy-peer-deps
+#             npm run build
+#             bash deploy.sh
+
+
+name: Deploy to DigitalOcean working
 
 on:
   push:
@@ -8,19 +36,32 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # Increase timeout
+
     steps:
       - uses: actions/checkout@v2
       
+      - name: Cache node modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm install --loglevel=error --silent
+
+      - name: Build frontend
+        run: npm run build --loglevel=error --silent
+
       - name: Deploy to DigitalOcean Droplet
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.DROPLET_IP }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.DROPLET_SSH_KEY }}
-          script_timeout: 1200 # Increase to 20 minutes
           script: |
             cd /var/www/crm-app
             git pull origin main
-            npm install --no-audit --legacy-peer-deps
-            npm run build
             bash deploy.sh
