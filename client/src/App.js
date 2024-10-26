@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
 import CustomerList from './components/CustomerList';
 import CustomerDetails from './components/CustomerDetails';
 import './App.css';
+import AddCustomer from './components/AddCustomer';
 
 const App = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -50,7 +51,7 @@ const App = () => {
                 </button>
                 {dropdownOpen && (
                   <div className="dropdown-content">
-                    <Link to="/customers" onClick={() => setDropdownOpen(false)}>Customers</Link>
+                    <Link to="/customers" onClick={() => setDropdownOpen(false)}>All Customer</Link>
                     <Link to="/" onClick={() => setDropdownOpen(false)}>Home</Link>
                     <Link to="/about" onClick={() => setDropdownOpen(false)}>About Us</Link>
                   </div>
@@ -65,9 +66,9 @@ const App = () => {
                 </button>
                 {customerDropdownOpen && (
                   <div className="dropdown-content">
-                    <Link to="/customers/add" onClick={() => setCustomerDropdownOpen(false)}>Add New Customer</Link>
-                    <Link to="/customers/view-all" onClick={() => setCustomerDropdownOpen(false)}>View All Customers</Link>
-                    <Link to="/customers/reports" onClick={() => setCustomerDropdownOpen(false)}>Customer Reports</Link>
+                    <Link to="/add-customer" onClick={() => setCustomerDropdownOpen(false)}>Add New Customer</Link>
+                    {/* <Link to="/customers/view-all" onClick={() => setCustomerDropdownOpen(false)}>View All Customers</Link> */}
+                    {/* <Link to="/customers/reports" onClick={() => setCustomerDropdownOpen(false)}>Customer Reports</Link> */}
                   </div>
                 )}
               </div>
@@ -86,6 +87,7 @@ const App = () => {
             />
             <Route path="/customers" element={<CustomerList />} />
             <Route path="/customer/:id" element={<CustomerDetails />} />
+            <Route path="/add-customer" element={<AddCustomer />} />
           </Routes>
         </div>
       </div>

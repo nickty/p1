@@ -1,0 +1,89 @@
+/* CustomerDetails.css */
+
+.customer-details-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .customer-info {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .customer-name {
+    font-size: 24px;
+    font-weight: bold;
+    color: #007bff;
+  }
+  
+  .customer-info p {
+    font-size: 16px;
+    margin: 5px 0;
+  }
+  
+  .customer-info span {
+    font-weight: bold;
+    color: #555;
+  }
+  
+  .notes-section, .orders-section {
+    margin-top: 30px;
+  }
+  
+  .notes-section h3, .orders-section h3 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  .note-inputs, .order-inputs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .note-inputs input, .order-inputs input, select {
+    flex: 1;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+  }
+  
+  .note-inputs button, .order-inputs button {
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .note-inputs button:hover, .order-inputs button:hover {
+    background-color: #0056b3;
+  }
+  
+  .notes-list, .orders-list {
+    display: grid;
+    gap: 10px;
+  }
+  
+  .note-card, .order-card {
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .loading {
+    text-align: center;
+    font-size: 18px;
+    padding: 50px;
+  }
+  
