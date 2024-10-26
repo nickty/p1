@@ -1,4 +1,3 @@
-// CustomerDetails.js
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getCustomer, getNotes, createNote, getOrders, createOrder } from '../services/api';
@@ -13,28 +12,30 @@ const CustomerDetails = () => {
   const [newOrder, setNewOrder] = useState({ amount: 0, description: '' });
 
   useEffect(() => {
-    fetchCustomerDetails();
-  },[id]);
+    const fetchCustomerDetails = async () => {
+      const fetchedCustomer = await getCustomer(id);
+      setCustomer(fetchedCustomer);
+      const fetchedNotes = await getNotes(id);
+      setNotes(fetchedNotes);
+      const fetchedOrders = await getOrders(id);
+      setOrders(fetchedOrders);
+    };
 
-  const fetchCustomerDetails = async () => {
-    const fetchedCustomer = await getCustomer(id);
-    setCustomer(fetchedCustomer);
-    const fetchedNotes = await getNotes(id);
-    setNotes(fetchedNotes);
-    const fetchedOrders = await getOrders(id);
-    setOrders(fetchedOrders);
-  };
+    fetchCustomerDetails();
+  }, [id]); // Now, no need for fetchCustomerDetails as a dependency
 
   const addNote = async () => {
     await createNote(id, newNote);
     setNewNote({ type: 'call', content: '', salesAgent: '' });
-    fetchCustomerDetails();
+    // Instead of re-fetching, you might want to update the notes state directly
+    setNotes((prevNotes) => [...prevNotes, { ...newNote, _id: Date.now() }]); // Temporarily add the note
   };
 
   const addOrder = async () => {
     await createOrder(id, newOrder);
     setNewOrder({ amount: 0, description: '' });
-    fetchCustomerDetails();
+    // Instead of re-fetching, you might want to update the orders state directly
+    setOrders((prevOrders) => [...prevOrders, { ...newOrder, _id: Date.now(), date: new Date() }]); // Temporarily add the order
   };
 
   if (!customer) return <div className="loading">Loading...</div>;
