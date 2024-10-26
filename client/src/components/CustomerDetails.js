@@ -14,7 +14,7 @@ const CustomerDetails = () => {
 
   useEffect(() => {
     fetchCustomerDetails();
-  }, [id]);
+  },[id]);
 
   const fetchCustomerDetails = async () => {
     const fetchedCustomer = await getCustomer(id);
