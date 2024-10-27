@@ -8,30 +8,17 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v2
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '18' # Specify the desired Node version
-
-      - name: Cache node modules
+      # Cache node_modules
+      - name: Cache Node Modules
         uses: actions/cache@v2
         with:
-          path: client/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('client/**/package-lock.json') }}
+          path: /var/www/crm-app/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-
-      - name: Install dependencies
-        run: npm install --loglevel=error --silent
-        working-directory: client
-
-      - name: Build frontend
-        run: npm run build --loglevel=error # Remove --silent to see detailed logs
-        working-directory: client # Ensure we're in the correct directory
 
       - name: Deploy to DigitalOcean Droplet
         uses: appleboy/ssh-action@master
