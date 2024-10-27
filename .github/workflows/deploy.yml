@@ -1,36 +1,48 @@
 name: Deploy to DigitalOcean
-on: 
-  push: 
-    branches: 
+
+on:
+  push:
+    branches:
       - main
-jobs: 
-  deploy: 
+
+jobs:
+  deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 60 # Increase timeout
-    steps: 
-      - uses: actions/checkout@v2
+    timeout-minutes: 45  # Increased timeout
+
+    steps:
+      - uses: actions/checkout@v3  # Updated to v3
+
       - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with: 
-          node-version: '18' # Specify the desired Node version
+        uses: actions/setup-node@v3  # Updated to v3
+        with:
+          node-version: '18'
+
       - name: Cache node modules
-        uses: actions/cache@v2
-        with: 
+        uses: actions/cache@v3  # Updated to v3
+        with:
           path: client/node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('client/**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
+
       - name: Install dependencies
-        run: npm install --loglevel=error --silent
-        working-directory: client
+        run: |
+          cd client
+          npm ci --prefer-offline --no-audit
+        env:
+          CI: true
+
       - name: Build frontend
-        run: npm run build --loglevel=error # Remove --silent to see detailed logs
-        working-directory: client # Ensure we're in the correct directory
-      - name: Debug SSH Connection
-        run: ssh -vvv -i ${{ secrets.DROPLET_SSH_KEY }} ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} "echo 'SSH Connection Successful'"
+        run: |
+          cd client
+          npm run build
+        env:
+          CI: true
+
       - name: Deploy to DigitalOcean Droplet
         uses: appleboy/ssh-action@master
-        with: 
+        with:
           host: ${{ secrets.DROPLET_IP }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.DROPLET_SSH_KEY }}
