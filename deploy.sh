@@ -46,30 +46,33 @@ cd /var/www/crm-app || handle_error $LINENO
 log_message "Fetching latest changes..."
 git fetch origin main
 
-# Check if there are any changes
-if git diff --quiet HEAD origin/main; then
-    log_message "No changes detected. Proceeding with build anyway."
-fi
-
 # Reset the local branch to match the remote main branch
 log_message "Resetting to latest main branch..."
 git reset --hard origin/main
 
 # Install backend dependencies
 log_message "Installing backend dependencies..."
-npm ci
+npm ci --no-audit --prefer-offline
 
 # Navigate to client directory
 log_message "Navigating to client directory..."
 cd client || handle_error $LINENO
 
-# Install frontend dependencies
+# Clear npm cache
+log_message "Clearing npm cache..."
+npm cache clean --force
+
+# Install frontend dependencies with verbose logging and increased network timeout
 log_message "Installing frontend dependencies..."
-npm ci
+npm ci --no-audit --prefer-offline --verbose --network-timeout 300000 || handle_error $LINENO
+
+# Log installed packages
+log_message "Installed frontend packages:"
+npm list --depth=0
 
 # Build frontend
 log_message "Building frontend..."
-npm run build
+npm run build --verbose
 
 # Check if build directory exists
 if [ ! -d "build" ]; then
