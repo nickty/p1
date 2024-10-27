@@ -21,3 +21,4 @@ jobs:
             cd /var/www/crm-app
             git pull origin main
             bash deploy.sh
+          timeout: 1200
