@@ -8,37 +8,54 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 45  # Increased timeout
+    timeout-minutes: 60  # Increased overall timeout
 
     steps:
-      - uses: actions/checkout@v3  # Updated to v3
+      - uses: actions/checkout@v3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3  # Updated to v3
+        uses: actions/setup-node@v3
         with:
           node-version: '18'
 
       - name: Cache node modules
-        uses: actions/cache@v3  # Updated to v3
+        uses: actions/cache@v3
         with:
           path: client/node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('client/**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
+      - name: Navigate to client directory
+        run: |
+          cd client
+          echo "Current directory: $(pwd)"
+          ls -la
+
       - name: Install dependencies
         run: |
           cd client
+          echo "Starting npm ci..."
           npm ci --prefer-offline --no-audit
+          echo "npm ci completed"
         env:
           CI: true
+        timeout-minutes: 15
+
+      - name: List installed packages
+        run: |
+          cd client
+          npm list --depth=0
 
       - name: Build frontend
         run: |
           cd client
+          echo "Starting build process..."
           npm run build
+          echo "Build process completed"
         env:
           CI: true
+        timeout-minutes: 15
 
       - name: Deploy to DigitalOcean Droplet
         uses: appleboy/ssh-action@master
