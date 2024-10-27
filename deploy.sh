@@ -27,7 +27,7 @@ if ! command -v node &> /dev/null; then
     curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
     sudo apt-get install -y nodejs
 else
-    log_message "Node.js is already installed. Skipping installation."
+    log_message "Node.js is already installed. Version: $(node -v)"
 fi
 
 # Install PM2 globally if not already installed
@@ -35,7 +35,7 @@ if ! command -v pm2 &> /dev/null; then
     log_message "Installing PM2..."
     sudo npm install -g pm2
 else
-    log_message "PM2 is already installed. Skipping installation."
+    log_message "PM2 is already installed. Version: $(pm2 -v)"
 fi
 
 # Navigate to the application directory
@@ -48,8 +48,7 @@ git fetch origin main
 
 # Check if there are any changes
 if git diff --quiet HEAD origin/main; then
-    log_message "No changes detected. Skipping deployment."
-    exit 0
+    log_message "No changes detected. Proceeding with build anyway."
 fi
 
 # Reset the local branch to match the remote main branch
@@ -58,16 +57,29 @@ git reset --hard origin/main
 
 # Install backend dependencies
 log_message "Installing backend dependencies..."
-npm ci --production
+npm ci
 
 # Navigate to client directory
 log_message "Navigating to client directory..."
 cd client || handle_error $LINENO
 
-# Install frontend dependencies and build
-log_message "Installing frontend dependencies and building..."
-npm ci --production
+# Install frontend dependencies
+log_message "Installing frontend dependencies..."
+npm ci
+
+# Build frontend
+log_message "Building frontend..."
 npm run build
+
+# Check if build directory exists
+if [ ! -d "build" ]; then
+    log_message "Error: Build directory not found. Build may have failed."
+    handle_error $LINENO
+fi
+
+# Log build directory contents
+log_message "Contents of build directory:"
+ls -la build
 
 # Navigate back to the root directory
 log_message "Navigating back to root directory..."
