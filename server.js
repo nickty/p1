@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 5000;
 
 // Allow CORS for your specific frontend domain
 const corsOptions = {
-  origin: 'http://134.209.246.121', // Replace this with your actual server IP or domain
+  origin: 'https://7websites.com/api', // Replace this with your actual server IP or domain
   optionsSuccessStatus: 200,
 };
 
