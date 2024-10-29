@@ -3,7 +3,7 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-# Function to log messages with timestamps
+# Function to log messages with timestamps sdfsdf
 log_message() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
