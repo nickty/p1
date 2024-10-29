@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 60  # Increased overall timeout
+    timeout-minutes: 60  # Increased overall timeout didnt work
 
     steps:
       - uses: actions/checkout@v3
