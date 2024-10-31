@@ -4,6 +4,20 @@
 
 # Production
 /client/build
+/out
+/dist
+
+# Tailwind CSS cache
+.tailwindcss*
+
+# Vite cache
+.vite
+
+# Webpack cache
+/.cache
+
+# TypeScript cache
+*.tsbuildinfo
 
 # Misc
 .DS_Store

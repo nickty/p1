@@ -1,98 +1,785 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
-import CustomerList from './components/CustomerList';
-import CustomerDetails from './components/CustomerDetails';
-import './App.css';
-import AddCustomer from './components/AddCustomer';
+import React, { useState, useMemo } from 'react'
+import { ChevronDown, Settings, Pin, Star, Plus, Search, X } from 'lucide-react'
 
-const App = () => {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [customerDropdownOpen, setCustomerDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  const customerDropdownRef = useRef(null);
-
-  // Handle clicks outside dropdowns
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target)
-      ) {
-        setDropdownOpen(false);
-      }
-
-      if (
-        customerDropdownRef.current &&
-        !customerDropdownRef.current.contains(event.target)
-      ) {
-        setCustomerDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
+function Button({ children, variant = 'primary', ...props }) {
+  const baseStyle = "px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2"
+  const variants = {
+    primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
+    secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-500",
+    danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
+  }
   return (
-    <Router>
-      <div className="app-container">
-        <nav className="navbar">
-          <div className="navbar-container">
-            <div className="navbar-left">
-              <Link to="/" className="navbar-logo">CRM</Link>
-              <div className="dropdown" ref={dropdownRef}>
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="dropdown-button"
-                >
-                  Menu
-                </button>
-                {dropdownOpen && (
-                  <div className="dropdown-content">
-                    <Link to="/customers" onClick={() => setDropdownOpen(false)}>All Customer</Link>
-                    <Link to="/" onClick={() => setDropdownOpen(false)}>Home</Link>
-                    <Link to="/about" onClick={() => setDropdownOpen(false)}>About Us</Link>
-                  </div>
-                )}
-              </div>
-              <div className="dropdown" ref={customerDropdownRef}>
-                <button
-                  onClick={() => setCustomerDropdownOpen(!customerDropdownOpen)}
-                  className="dropdown-button"
-                >
-                  Customer Actions
-                </button>
-                {customerDropdownOpen && (
-                  <div className="dropdown-content">
-                    <Link to="/add-customer" onClick={() => setCustomerDropdownOpen(false)}>Add New Customer</Link>
-                    {/* <Link to="/customers/view-all" onClick={() => setCustomerDropdownOpen(false)}>View All Customers</Link> */}
-                    {/* <Link to="/customers/reports" onClick={() => setCustomerDropdownOpen(false)}>Customer Reports</Link> */}
-                  </div>
-                )}
-              </div>
+    <button className={`${baseStyle} ${variants[variant]}`} {...props}>
+      {children}
+    </button>
+  )
+}
+
+function Input({ ...props }) {
+  return <input className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" {...props} />
+}
+
+function Select({ children, ...props }) {
+  return (
+    <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" {...props}>
+      {children}
+    </select>
+  )
+}
+
+function Card({ children, ...props }) {
+  return <div className="bg-white shadow-md rounded-lg overflow-hidden" {...props}>{children}</div>
+}
+
+function App() {
+  const [customers, setCustomers] = useState([])
+  const [selectedCustomer, setSelectedCustomer] = useState(null)
+  const [newCustomer, setNewCustomer] = useState({ name: '', phone: '', email: '', stage: 'new' })
+  const [newNote, setNewNote] = useState({ type: 'call', content: '', salesAgent: '' })
+  const [newOrder, setNewOrder] = useState({ amount: 0, description: '' })
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeSection, setActiveSection] = useState('customers')
+  const [kpiFilter, setKpiFilter] = useState('all')
+  const [isAdminMode, setIsAdminMode] = useState(false)
+  const [showAdminDialog, setShowAdminDialog] = useState(false)
+  const [isAdminPortalOpen, setIsAdminPortalOpen] = useState(false)
+  const [adminPassword, setAdminPassword] = useState('')
+  const [editingOrder, setEditingOrder] = useState(null)
+  const [showStageChangeDialog, setShowStageChangeDialog] = useState(false)
+  const [newStage, setNewStage] = useState('new')
+  const [stageChangePassword, setStageChangePassword] = useState('')
+  const [adminSettings, setAdminSettings] = useState({
+    showTotalRevenue: true,
+    showCustomerStage: true,
+    showTouchpoints: true,
+    showKPIs: true,
+  })
+  const [showHelpDialog, setShowHelpDialog] = useState(false)
+
+  const stages = ['new', 'engaged', 'ordered', 'closed lost']
+
+  const addCustomer = () => {
+    if (newCustomer.name.trim()) {
+      const customer = {
+        id: Date.now(),
+        ...newCustomer,
+        notes: [],
+        orders: [],
+        totalRevenue: 0,
+        contacts: 0,
+        touchpoints: 0
+      }
+      setCustomers([...customers, customer])
+      setNewCustomer({ name: '', phone: '', email: '', stage: 'new' })
+    }
+  }
+
+  const updateCustomer = (updatedCustomer) => {
+    setCustomers(customers.map(c => c.id === updatedCustomer.id ? updatedCustomer : c))
+    setSelectedCustomer(updatedCustomer)
+  }
+
+  const deleteCustomer = (id) => {
+    setCustomers(customers.filter(c => c.id !== id))
+    setSelectedCustomer(null)
+    setAdminPassword('')
+    setActiveSection('customers')
+  }
+
+  const addNote = () => {
+    if (selectedCustomer && newNote.content.trim()) {
+      const note = {
+        id: Date.now(),
+        ...newNote,
+        timestamp: new Date().toISOString(),
+        isPinned: false,
+        isHighlighted: false
+      }
+      const updatedCustomer = {
+        ...selectedCustomer,
+        notes: [...selectedCustomer.notes, note],
+        contacts: selectedCustomer.contacts + 1,
+        touchpoints: selectedCustomer.touchpoints + 1,
+        stage: selectedCustomer.stage === 'new' ? 'engaged' : selectedCustomer.stage
+      }
+      updateCustomer(updatedCustomer)
+      setNewNote({ type: 'call', content: '', salesAgent: '' })
+    }
+  }
+
+  const toggleNotePinned = (noteId) => {
+    if (selectedCustomer) {
+      const updatedNotes = selectedCustomer.notes.map(note =>
+        note.id === noteId ? { ...note, isPinned: !note.isPinned } : note
+      )
+      updateCustomer({ ...selectedCustomer, notes: updatedNotes })
+    }
+  }
+
+  const toggleNoteHighlighted = (noteId) => {
+    if (selectedCustomer) {
+      const updatedNotes = selectedCustomer.notes.map(note =>
+        note.id === noteId ? { ...note, isHighlighted: !note.isHighlighted } : note
+      )
+      updateCustomer({ ...selectedCustomer, notes: updatedNotes })
+    }
+  }
+
+  const addOrder = () => {
+    if (selectedCustomer && newOrder.amount > 0) {
+      const order = {
+        id: Date.now(),
+        date: new Date().toISOString(),
+        ...newOrder
+      }
+      const updatedCustomer = {
+        ...selectedCustomer,
+        orders: [...selectedCustomer.orders, order],
+        totalRevenue: selectedCustomer.totalRevenue + newOrder.amount,
+        stage: 'ordered'
+      }
+      updateCustomer(updatedCustomer)
+      setNewOrder({ amount: 0, description: '' })
+    }
+  }
+
+  const deleteOrder = (orderId) => {
+    if (selectedCustomer) {
+      const orderToDelete = selectedCustomer.orders.find(order => order.id === orderId)
+      if (orderToDelete) {
+        const updatedCustomer = {
+          ...selectedCustomer,
+          orders: selectedCustomer.orders.filter(order => order.id !== orderId),
+          totalRevenue: selectedCustomer.totalRevenue - orderToDelete.amount
+        }
+        updateCustomer(updatedCustomer)
+      }
+    }
+  }
+
+  const updateOrder = (updatedOrder) => {
+    if (selectedCustomer) {
+      const oldOrder = selectedCustomer.orders.find(order => order.id === updatedOrder.id)
+      const updatedCustomer = {
+        ...selectedCustomer,
+        orders: selectedCustomer.orders.map(order => order.id === updatedOrder.id ? updatedOrder : order),
+        totalRevenue: selectedCustomer.totalRevenue - (oldOrder?.amount || 0) + updatedOrder.amount
+      }
+      updateCustomer(updatedCustomer)
+      setEditingOrder(null)
+    }
+  }
+
+  const handleAdminLogin = () => {
+    if (adminPassword === 'GULFSTREAM') {
+      setIsAdminMode(true)
+      setAdminPassword('')
+      setShowAdminDialog(false)
+      setIsAdminPortalOpen(true)
+    } else {
+      alert('Incorrect password')
+    }
+  }
+
+  const handleAdminLogout = () => {
+    setIsAdminMode(false)
+    setIsAdminPortalOpen(false)
+  }
+
+  const filteredCustomers = useMemo(() => {
+    return customers.filter(customer =>
+      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.phone.includes(searchQuery)
+    )
+  }, [customers, searchQuery])
+
+  const calculateKPIs = (customerId) => {
+    const filteredCustomers = customerId === 'all' 
+      ? customers 
+      : customers.filter(c => c.id.toString() === customerId)
+
+    const totalCustomers = filteredCustomers.length
+    const orderedCustomers = filteredCustomers.filter(c => c.stage === 'ordered').length
+    const totalRevenue = filteredCustomers.reduce((sum, customer) => sum + customer.totalRevenue, 0)
+    const totalTouchpoints = filteredCustomers.reduce((sum, customer) => sum + customer.touchpoints, 0)
+
+    const activityPerSalesAgent = {}
+    filteredCustomers.forEach(customer => {
+      customer.notes.forEach(note => {
+        activityPerSalesAgent[note.salesAgent] = (activityPerSalesAgent[note.salesAgent] || 0) + 1
+      })
+    })
+
+    return {
+      clv: totalRevenue / orderedCustomers || 0,
+      conversionRate: (orderedCustomers / totalCustomers) * 100 || 0,
+      averageTouchpoints: totalTouchpoints / totalCustomers || 0,
+      activityPerSalesAgent,
+      revenuePerTouchpoint: totalRevenue / totalTouchpoints || 0
+    }
+  }
+
+  const kpis = calculateKPIs(kpiFilter)
+
+  const renderStageBar = (currentStage) => (
+    <div className="flex mb-4">
+      {stages.map((stage, index) => (
+        <div 
+          key={stage} 
+          className={`flex-1 p-2 text-center ${
+            stages.indexOf(currentStage) >= index 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-200 text-gray-800'
+          } ${index === 0 ? 'rounded-l-lg' : ''} ${index === stages.length - 1 ? 'rounded-r-lg' : ''}`}
+        >
+          {stage}
+        </div>
+      ))}
+    </div>
+  )
+
+  const renderCustomers = () => (
+    <div className="space-y-4">
+      <div className="flex space-x-4">
+        <Input
+          placeholder="Name"
+          value={newCustomer.name}
+          onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+        />
+        <Input
+          placeholder="Phone"
+          value={newCustomer.phone}
+          onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+        />
+        <Input
+          placeholder="Email"
+          value={newCustomer.email}
+          onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+        />
+        <Select
+          value={newCustomer.stage}
+          onChange={(e) => setNewCustomer({ ...newCustomer, stage: e.target.value })}
+        >
+          {stages.map(stage => (
+            <option key={stage} value={stage}>{stage}</option>
+          ))}
+        </Select>
+        <Button onClick={addCustomer}>
+          <Plus className="w-5 h-5 mr-2" />
+          Add Customer
+        </Button>
+      </div>
+      <div className="relative">
+        <Input
+          placeholder="Search customers..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+        <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2"
+          >
+            <X className="w-5 h-5 text-gray-400" />
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredCustomers.map(customer => (
+          <Card
+            key={customer.id}
+            className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+            onClick={() => {
+              setSelectedCustomer(customer)
+              setActiveSection('details')
+            }}
+          >
+            <div className="p-4">
+              <h3 className="text-lg font-semibold">{customer.name}</h3>
+              <p className="text-sm text-gray-600">{customer.email}</p>
+              <p className="text-sm text-gray-600">{customer.phone}</p>
+              {adminSettings.showCustomerStage && (
+                <p className="text-sm text-gray-600 mt-2">Stage: {customer.stage}</p>
+              )}
+              {(isAdminMode && adminSettings.showTotalRevenue) && (
+                <p className="text-sm text-gray-600">Revenue: €{customer.totalRevenue.toFixed(2)}</p>
+              )}
             </div>
-            <div className="navbar-right">
-              <Link to="/profile" className="navbar-link">Profile</Link>
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
+
+  const renderCustomerDetails = () => (
+    <div className="space-y-6">
+      {selectedCustomer ? (
+        <>
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">{selectedCustomer.name}</h2>
+            <Button variant="secondary" onClick={() => setActiveSection('customers')}>
+              Back to Customers
+            </Button>
+          </div>
+          {adminSettings.showCustomerStage && renderStageBar(selectedCustomer.stage)}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              value={selectedCustomer.name}
+              onChange={(e) => updateCustomer({ ...selectedCustomer, name: e.target.value })}
+              placeholder="Name"
+            />
+            <Input
+              value={selectedCustomer.phone}
+              onChange={(e) => updateCustomer({ ...selectedCustomer, phone: e.target.value })}
+              placeholder="Phone"
+            />
+            <Input
+              value={selectedCustomer.email}
+              onChange={(e) => updateCustomer({ ...selectedCustomer, email: e.target.value })}
+              placeholder="Email"
+            />
+            {adminSettings.showCustomerStage && (
+              <Select
+                value={selectedCustomer.stage}
+                onChange={(e) => {
+                  const currentIndex = stages.indexOf(selectedCustomer.stage);
+                  const newIndex = stages.indexOf(e.target.value);
+                  if (newIndex < currentIndex) {
+                    setShowStageChangeDialog(true);
+                    setNewStage(e.target.value);
+                  } else {
+                    updateCustomer({ ...selectedCustomer, stage: e.target.value });
+                  }
+                }}
+              >
+                {stages.map(stage => (
+                  <option key={stage} value={stage}>{stage}</option>
+                ))}
+              </Select>
+            )}
+            {(isAdminMode && adminSettings.showTotalRevenue) && (
+              <Input
+                type="number"
+                value={selectedCustomer.totalRevenue}
+                
+                onChange={(e) => updateCustomer({ ...selectedCustomer, totalRevenue: parseFloat(e.target.value) || 0 })}
+                placeholder="Total Revenue (€)"
+                readOnly
+              />
+            )}
+            {adminSettings.showTouchpoints && (
+              <Input
+                type="number"
+                value={selectedCustomer.touchpoints}
+                placeholder="Touchpoints"
+                readOnly
+              />
+            )}
+          </div>
+          <div className="flex justify-end">
+            <Button variant="danger" onClick={() => setShowAdminDialog(true)}>Delete Customer</Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <div className="p-4">
+                <h3 className="text-lg font-semibold mb-4">Notes</h3>
+                <div className="space-y-2 mb-4">
+                  <Select
+                    value={newNote.type}
+                    onChange={(e) => setNewNote({ ...newNote, type: e.target.value })}
+                  >
+                    <option value="call">Call</option>
+                    <option value="email">Email</option>
+                  </Select>
+                  <Input
+                    placeholder="Sales Agent"
+                    value={newNote.salesAgent}
+                    onChange={(e) => setNewNote({ ...newNote, salesAgent: e.target.value })}
+                  />
+                  <textarea
+                    placeholder="Note content"
+                    value={newNote.content}
+                    onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows="3"
+                  />
+                  <Button onClick={addNote}>Add Note</Button>
+                </div>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {selectedCustomer.notes
+                    .sort((a, b) => {
+                      if (a.isPinned && !b.isPinned) return -1;
+                      if (!a.isPinned && b.isPinned) return 1;
+                      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+                    })
+                    .map(note => (
+                      <div key={note.id} className={`p-2 rounded ${note.isHighlighted ? 'bg-yellow-100' : 'bg-gray-100'}`}>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="font-medium">{note.type}</span>
+                          <div className="flex space-x-2">
+                            <button onClick={() => toggleNotePinned(note.id)}>
+                              <Pin className={`w-4 h-4 ${note.isPinned ? 'text-blue-500' : 'text-gray-500'}`} />
+                            </button>
+                            <button onClick={() => toggleNoteHighlighted(note.id)}>
+                              <Star className={`w-4 h-4 ${note.isHighlighted ? 'text-yellow-500' : 'text-gray-500'}`} />
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-sm">{note.content}</p>
+                        <div className="text-xs text-gray-500 mt-1">
+                          <span>{note.salesAgent}</span>
+                          <span className="mx-1">•</span>
+                          <span>{new Date(note.timestamp).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+            </Card>
+            <Card>
+              <div className="p-4">
+                <h3 className="text-lg font-semibold mb-4">Orders</h3>
+                <div className="space-y-2 mb-4">
+                  <Input
+                    type="number"
+                    placeholder="Amount (€)"
+                    value={newOrder.amount}
+                    onChange={(e) => setNewOrder({ ...newOrder, amount: parseFloat(e.target.value) || 0 })}
+                  />
+                  <Input
+                    placeholder="Description"
+                    value={newOrder.description}
+                    onChange={(e) => setNewOrder({ ...newOrder, description: e.target.value })}
+                  />
+                  <Button onClick={addOrder}>Add Order</Button>
+                </div>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {selectedCustomer.orders.map(order => (
+                    <div key={order.id} className="p-2 bg-gray-100 rounded">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">€{order.amount.toFixed(2)}</span>
+                        <span className="text-sm text-gray-500">{new Date(order.date).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-sm mt-1">{order.description}</p>
+                      {isAdminMode && (
+                        <div className="mt-2 flex justify-end space-x-2">
+                          <Button variant="secondary" onClick={() => setEditingOrder(order)}>Edit</Button>
+                          <Button variant="danger" onClick={() => deleteOrder(order.id)}>Delete</Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </div>
+        </>
+      ) : (
+        <p>Select a customer to view details</p>
+      )}
+    </div>
+  )
+
+  const renderKPIs = () => (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold">KPIs</h2>
+      <div className="mb-4">
+        <label htmlFor="kpi-filter" className="block text-sm font-medium text-gray-700">Filter KPIs by Customer</label>
+        <Select id="kpi-filter" value={kpiFilter} onChange={(e) => setKpiFilter(e.target.value)}>
+          <option value="all">All Customers</option>
+          {customers.map(customer => (
+            <option key={customer.id} value={customer.id.toString()}>{customer.name}</option>
+          ))}
+        </Select>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold">Customer Lifetime Value (CLV)</h3>
+            <p className="text-2xl font-bold mt-2">€{kpis.clv.toFixed(2)}</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold">Conversion Rate</h3>
+            <p className="text-2xl font-bold mt-2">{kpis.conversionRate.toFixed(2)}%</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold">Average Touchpoints</h3>
+            <p className="text-2xl font-bold mt-2">{kpis.averageTouchpoints.toFixed(2)}</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold">Activity per Sales Agent</h3>
+            <div className="mt-2">
+              {Object.entries(kpis.activityPerSalesAgent).map(([agent, activity]) => (
+                <p key={agent}>{agent}: {activity} activities</p>
+              ))}
             </div>
           </div>
-        </nav>
+        </Card>
+        <Card>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold">Revenue per Touchpoint</h3>
+            <p className="text-2xl font-bold mt-2">€{kpis.revenuePerTouchpoint.toFixed(2)}</p>
+          </div>
+        </Card>
+      </div>
+    </div>
+  )
 
-        <div className="content-container">
-          <Routes>
-            <Route
-              path="/"
-              element={<h1 className="home-title">Welcome to CRM</h1>}
-            />
-            <Route path="/customers" element={<CustomerList />} />
-            <Route path="/customer/:id" element={<CustomerDetails />} />
-            <Route path="/add-customer" element={<AddCustomer />} />
-          </Routes>
+  const renderAdminSettings = () => (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold">Admin Settings</h2>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label htmlFor="showTotalRevenue" className="text-sm font-medium text-gray-700">Show Total Revenue</label>
+          <input
+            type="checkbox"
+            id="showTotalRevenue"
+            checked={adminSettings.showTotalRevenue}
+            onChange={(e) => setAdminSettings(prev => ({ ...prev, showTotalRevenue: e.target.checked }))}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <label htmlFor="showCustomerStage" className="text-sm font-medium text-gray-700">Show Customer Stage</label>
+          <input
+            type="checkbox"
+            id="showCustomerStage"
+            checked={adminSettings.showCustomerStage}
+            onChange={(e) => setAdminSettings(prev => ({ ...prev, showCustomerStage: e.target.checked }))}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <label htmlFor="showTouchpoints" className="text-sm font-medium text-gray-700">Show Touchpoints</label>
+          <input
+            type="checkbox"
+            id="showTouchpoints"
+            checked={adminSettings.showTouchpoints}
+            onChange={(e) => setAdminSettings(prev => ({ ...prev, showTouchpoints: e.target.checked }))}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <label htmlFor="showKPIs" className="text-sm font-medium text-gray-700">Show KPIs</label>
+          <input
+            type="checkbox"
+            id="showKPIs"
+            checked={adminSettings.showKPIs}
+            onChange={(e) => setAdminSettings(prev => ({ ...prev, showKPIs: e.target.checked }))}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
         </div>
       </div>
-    </Router>
-  );
-};
+    </div>
+  )
 
-export default App;
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-gray-900">TopGlanz Hannover CRM</h1>
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <Button variant="secondary" onClick={() => setShowAdminDialog(true)}>
+                <Settings className="w-5 h-5 mr-2" />
+                Settings
+              </Button>
+              {isAdminMode && (
+                <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-white bg-green-400" />
+              )}
+            </div>
+            <Select
+              value={activeSection}
+              onChange={(e) => setActiveSection(e.target.value)}
+              className="text-sm"
+            >
+              <option value="customers">Customers</option>
+              <option value="details">Customer Details</option>
+              {adminSettings.showKPIs && <option value="kpis">KPIs</option>}
+            </Select>
+          </div>
+        </div>
+      </header>
+      <main>
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          {activeSection === 'customers' && renderCustomers()}
+          {activeSection === 'details' && renderCustomerDetails()}
+          {activeSection === 'kpis' && adminSettings.showKPIs && renderKPIs()}
+        </div>
+      </main>
+
+      {/* Admin Login Dialog */}
+      {showAdminDialog && (
+        <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                  Admin Login
+                </h3>
+                <div className="mt-2">
+                  <Input
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    placeholder="Enter admin password"
+                  />
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <Button onClick={handleAdminLogin}>Login</Button>
+                <Button variant="secondary" onClick={() => setShowAdminDialog(false)} className="mr-2">
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Portal Dialog */}
+      {isAdminPortalOpen && (
+        <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                  Admin Portal
+                </h3>
+                <div className="mt-2">
+                  {renderAdminSettings()}
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <Button onClick={handleAdminLogout}>Logout</Button>
+                <Button variant="secondary" onClick={() => setIsAdminPortalOpen(false)} className="mr-2">
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Order Dialog */}
+      {editingOrder && (
+        <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                  Edit Order
+                </h3>
+                <div className="mt-2 space-y-4">
+                  <Input
+                    type="number"
+                    value={editingOrder.amount}
+                    onChange={(e) => setEditingOrder({ ...editingOrder, amount: parseFloat(e.target.value) || 0 })}
+                    placeholder="Amount"
+                  />
+                  <Input
+                    value={editingOrder.description}
+                    onChange={(e) => setEditingOrder({ ...editingOrder, description: e.target.value })}
+                    placeholder="Description"
+                  />
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <Button onClick={() => updateOrder(editingOrder)}>Save Changes</Button>
+                <Button variant="secondary" onClick={() => setEditingOrder(null)} className="mr-2">
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stage Change Dialog */}
+      {showStageChangeDialog && (
+        <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                  Change Customer Stage
+                </h3>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">
+                    Moving a customer to an earlier stage requires admin privileges. Please enter the admin password to proceed.
+                  </p>
+                  <Input
+                    type="password"
+                    placeholder="Enter admin password"
+                    value={stageChangePassword}
+                    onChange={(e) => setStageChangePassword(e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <Button onClick={() => {
+                  if (stageChangePassword === 'GULFSTREAM') {
+                    updateCustomer({ ...selectedCustomer, stage: newStage });
+                    setStageChangePassword('');
+                    setShowStageChangeDialog(false);
+                  } else {
+                    alert('Incorrect password');
+                  }
+                }}>Confirm Stage Change</Button>
+                <Button variant="secondary" onClick={() => setShowStageChangeDialog(false)} className="mr-2">
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Help Dialog */}
+      {showHelpDialog && (
+        <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                  Help & Support
+                </h3>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">
+                    Please call admin via 0152 52361741
+                  </p>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <Button onClick={() => setShowHelpDialog(false)}>Close</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default App
