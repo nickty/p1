@@ -292,35 +292,43 @@ function App() {
 
   const renderCustomers = () => (
     <div className="space-y-4">
-      <div className="flex space-x-4">
-        <Input
-          placeholder="Name"
-          value={newCustomer.name}
-          onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-        />
-        <Input
-          placeholder="Phone"
-          value={newCustomer.phone}
-          onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-        />
-        <Input
-          placeholder="Email"
-          value={newCustomer.email}
-          onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
-        />
-        <Select
-          value={newCustomer.stage}
-          onChange={(e) => setNewCustomer({ ...newCustomer, stage: e.target.value })}
-        >
-          {stages.map(stage => (
-            <option key={stage} value={stage}>{stage}</option>
-          ))}
-        </Select>
-        <Button onClick={addCustomer}>
-          <Plus className="w-5 h-5 mr-2" />
-          Add Customer
-        </Button>
-      </div>
+      <div className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md space-y-4">
+  <h2 className="text-2xl font-semibold text-gray-800 mb-4">Add New Customer</h2>
+
+  <input
+    type="text"
+    placeholder="Name"
+    value={newCustomer.name}
+    onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+  />
+  <input
+    type="text"
+    placeholder="Phone"
+    value={newCustomer.phone}
+    onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+  />
+  <input
+    type="text"
+    placeholder="Email"
+    value={newCustomer.email}
+    onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+  />
+  
+  <button
+    onClick={addCustomer}
+    className="w-full bg-blue-600 text-white font-semibold py-2 rounded-md flex items-center justify-center hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+    </svg>
+    <span>Add Customer</span>
+  </button>
+</div>
+
+      
       <div className="relative">
         <Input
           placeholder="Search customers..."
@@ -348,6 +356,16 @@ function App() {
               setActiveSection('details')
             }}
           >
+            
+      <Select
+          value={newCustomer.stage}
+          onChange={(e) => setNewCustomer({ ...newCustomer, stage: e.target.value })}
+        >
+          {stages.map(stage => (
+            <option key={stage} value={stage}>{stage}</option>
+          ))}
+        </Select>
+
             <div className="p-4">
               <h3 className="text-lg font-semibold">{customer.name}</h3>
               <p className="text-sm text-gray-600">{customer.email}</p>
