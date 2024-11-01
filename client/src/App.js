@@ -508,7 +508,7 @@ function App() {
                   <Button onClick={addOrder}>Add Order</Button>
                 </div>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {selectedCustomer.orders.map(order => (
+                  {selectedCustomer?.orders?.map(order => (
                     <div key={order._id} className="p-2 bg-gray-100 rounded">
                       <div className="flex justify-between items-center">
                         <span className="font-medium">€{order.amount.toFixed(2)}</span>
@@ -541,7 +541,7 @@ function App() {
         <label htmlFor="kpi-filter" className="block text-sm font-medium text-gray-700">Filter KPIs by Customer</label>
         <Select id="kpi-filter" value={kpiFilter} onChange={(e) => setKpiFilter(e.target.value)}>
           <option value="all">All Customers</option>
-          {customers.map(customer => (
+          {customers?.map(customer => (
             <option key={customer._id} value={customer._id.toString()}>{customer.name}</option>
           ))}
         </Select>
@@ -594,7 +594,7 @@ function App() {
           <input
             type="checkbox"
             id="showTotalRevenue"
-            checked={adminSettings.showTotalRevenue}
+            checked={adminSettings?.showTotalRevenue}
             onChange={(e) => setAdminSettings(prev => ({ ...prev, showTotalRevenue: e.target.checked }))}
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
@@ -604,7 +604,7 @@ function App() {
           <input
             type="checkbox"
             id="showCustomerStage"
-            checked={adminSettings.showCustomerStage}
+            checked={adminSettings?.showCustomerStage}
             onChange={(e) => setAdminSettings(prev => ({ ...prev, showCustomerStage: e.target.checked }))}
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
@@ -614,7 +614,7 @@ function App() {
           <input
             type="checkbox"
             id="showTouchpoints"
-            checked={adminSettings.showTouchpoints}
+            checked={adminSettings?.showTouchpoints}
             onChange={(e) => setAdminSettings(prev => ({ ...prev, showTouchpoints: e.target.checked }))}
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
@@ -624,7 +624,7 @@ function App() {
           <input
             type="checkbox"
             id="showKPIs"
-            checked={adminSettings.showKPIs}
+            checked={adminSettings?.showKPIs}
             onChange={(e) => setAdminSettings(prev => ({ ...prev, showKPIs: e.target.checked }))}
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
