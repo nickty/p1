@@ -459,8 +459,8 @@ function App() {
                   <Button onClick={addNote}>Add Note</Button>
                 </div>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {selectedCustomer.notes
-                    .sort((a, b) => {
+                  {selectedCustomer?.notes
+                    ?.sort((a, b) => {
                       if (a.isPinned && !b.isPinned) return -1;
                       if (!a.isPinned && b.isPinned) return 1;
                       return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
