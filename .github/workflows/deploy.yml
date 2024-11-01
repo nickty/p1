@@ -65,5 +65,5 @@ jobs:
           key: ${{ secrets.DROPLET_SSH_KEY }}
           script: |
             cd /var/www/crm-app
-            git pull origin main
+            git pull origin dev
             bash deploy.sh

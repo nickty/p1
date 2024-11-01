@@ -44,11 +44,11 @@ cd /var/www/crm-app || handle_error $LINENO
 
 # Fetch the latest changes from the remote repository
 log_message "Fetching latest changes..."
-git fetch origin main
+git fetch origin dev
 
-# Reset the local branch to match the remote main branch
-log_message "Resetting to latest main branch..."
-git reset --hard origin/main
+# Reset the local branch to match the remote dev branch
+log_message "Resetting to latest dev branch..."
+git reset --hard origin/dev
 
 # Install backend dependencies
 log_message "Installing backend dependencies..."
