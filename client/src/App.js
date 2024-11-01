@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
-import { Settings, Pin, Star, Plus, Search, X } from 'lucide-react'
+import { Settings, Pin, Star, Search, X } from 'lucide-react'
 
 // Assuming you've set up a proxy in package.json or using environment variables
 const API_BASE_URL = 'http://7websites.com/api'
