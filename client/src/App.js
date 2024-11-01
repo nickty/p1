@@ -246,8 +246,8 @@ function App() {
   )
 
   const calculateKPIs = (customerId) => {
-    const filteredCustomers = customerId === 'all' 
-      ? customers 
+    const filteredCustomers = customerId === 'all'
+      ? customers
       : customers.filter(c => c._id.toString() === customerId)
 
     const totalCustomers = filteredCustomers.length
@@ -276,13 +276,12 @@ function App() {
   const renderStageBar = (currentStage) => (
     <div className="flex mb-4">
       {stages.map((stage, index) => (
-        <div 
-          key={stage} 
-          className={`flex-1 p-2 text-center ${
-            stages.indexOf(currentStage) >= index 
-              ? 'bg-blue-600 text-white' 
+        <div
+          key={stage}
+          className={`flex-1 p-2 text-center ${stages.indexOf(currentStage) >= index
+              ? 'bg-black-600 text-white'
               : 'bg-gray-200 text-gray-800'
-          } ${index === 0 ? 'rounded-l-lg' : ''} ${index === stages.length - 1 ? 'rounded-r-lg' : ''}`}
+            } ${index === 0 ? 'rounded-l-lg' : ''} ${index === stages.length - 1 ? 'rounded-r-lg' : ''}`}
         >
           {stage}
         </div>
@@ -293,42 +292,42 @@ function App() {
   const renderCustomers = () => (
     <div className="space-y-4">
       <div className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md space-y-4">
-  <h2 className="text-2xl font-semibold text-gray-800 mb-4">Add New Customer</h2>
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Add New Customer</h2>
 
-  <input
-    type="text"
-    placeholder="Name"
-    value={newCustomer.name}
-    onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-  />
-  <input
-    type="text"
-    placeholder="Phone"
-    value={newCustomer.phone}
-    onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-  />
-  <input
-    type="text"
-    placeholder="Email"
-    value={newCustomer.email}
-    onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
-    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-  />
-  
-  <button
-    onClick={addCustomer}
-    className="w-full bg-blue-600 text-white font-semibold py-2 rounded-md flex items-center justify-center hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-    </svg>
-    <span>Add Customer</span>
-  </button>
-</div>
+        <input
+          type="text"
+          placeholder="Name"
+          value={newCustomer.name}
+          onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+        <input
+          type="text"
+          placeholder="Phone"
+          value={newCustomer.phone}
+          onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+        <input
+          type="text"
+          placeholder="Email"
+          value={newCustomer.email}
+          onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
 
-      
+        <button
+          onClick={addCustomer}
+          className="w-full bg-gray-600 text-white font-semibold py-2 rounded-md flex items-center justify-center hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Add Customer</span>
+        </button>
+      </div>
+
+
       <div className="relative">
         <Input
           placeholder="Search customers..."
@@ -356,15 +355,15 @@ function App() {
               setActiveSection('details')
             }}
           >
-            
-      <Select
-          value={newCustomer.stage}
-          onChange={(e) => setNewCustomer({ ...newCustomer, stage: e.target.value })}
-        >
-          {stages.map(stage => (
-            <option key={stage} value={stage}>{stage}</option>
-          ))}
-        </Select>
+
+            {/* <Select
+              value={newCustomer.stage}
+              onChange={(e) => setNewCustomer({ ...newCustomer, stage: e.target.value })}
+            >
+              {stages.map(stage => (
+                <option key={stage} value={stage}>{stage}</option>
+              ))}
+            </Select> */}
 
             <div className="p-4">
               <h3 className="text-lg font-semibold">{customer.name}</h3>
@@ -447,9 +446,9 @@ function App() {
               />
             )}
           </div>
-          <div className="flex justify-end">
+          {/* <div className="flex justify-end">
             <Button variant="danger" onClick={() => setShowAdminDialog(true)}>Delete Customer</Button>
-          </div>
+          </div> */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <div className="p-4">
@@ -654,40 +653,40 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-black shadow-md">
-      <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center text-white">
-        {/* App Title */}
-        <h1 onClick={ e => setActiveSection('customers')} className="text-3xl font-bold text-white">TopGlanz Hannover CRM</h1>
+        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center text-white">
+          {/* App Title */}
+          <h1 onClick={e => setActiveSection('customers')} className="text-3xl font-bold text-white">TopGlanz Hannover CRM</h1>
 
-        {/* Settings Button and Section Selector */}
-        <div className="flex items-center space-x-6">
-          {/* Settings Button with Icon */}
-          <div className="relative">
-            <Button
-              variant="secondary"
-              onClick={() => setShowAdminDialog(true)}
-              className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md flex items-center"
+          {/* Settings Button and Section Selector */}
+          <div className="flex items-center space-x-6">
+            {/* Settings Button with Icon */}
+            <div className="relative">
+              <Button
+                variant="secondary"
+                onClick={() => setShowAdminDialog(true)}
+                className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md flex items-center"
+              >
+                <Settings className="w-5 h-5 mr-2 text-gray-300" />
+                <span>Settings</span>
+              </Button>
+              {isAdminMode && (
+                <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-black bg-green-400" />
+              )}
+            </div>
+
+            {/* Section Selector Dropdown */}
+            <Select
+              value={activeSection}
+              onChange={(e) => setActiveSection(e.target.value)}
+              className="bg-gray-700 text-white text-sm px-3 py-2 rounded-md border border-gray-500 focus:outline-none"
             >
-              <Settings className="w-5 h-5 mr-2 text-gray-300" />
-              <span>Settings</span>
-            </Button>
-            {isAdminMode && (
-              <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-black bg-green-400" />
-            )}
+              <option value="customers">Customers</option>
+              <option value="details">Customer Details</option>
+              {adminSettings.showKPIs && <option value="kpis">KPIs</option>}
+            </Select>
           </div>
-
-          {/* Section Selector Dropdown */}
-          <Select
-            value={activeSection}
-            onChange={(e) => setActiveSection(e.target.value)}
-            className="bg-gray-700 text-white text-sm px-3 py-2 rounded-md border border-gray-500 focus:outline-none"
-          >
-            <option value="customers">Customers</option>
-            <option value="details">Customer Details</option>
-            {adminSettings.showKPIs && <option value="kpis">KPIs</option>}
-          </Select>
         </div>
-      </div>
-    </header>
+      </header>
       <main>
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           {activeSection === 'customers' && renderCustomers()}
