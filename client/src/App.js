@@ -1,5 +1,9 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useEffect } from 'react'
+import axios from 'axios'
 import { ChevronDown, Settings, Pin, Star, Plus, Search, X } from 'lucide-react'
+
+// Assuming you've set up a proxy in package.json or using environment variables
+const API_BASE_URL = 'http://7websites.com/api'
 
 function Button({ children, variant = 'primary', ...props }) {
   const baseStyle = "px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2"
@@ -58,115 +62,164 @@ function App() {
 
   const stages = ['new', 'engaged', 'ordered', 'closed lost']
 
-  const addCustomer = () => {
+  useEffect(() => {
+    fetchCustomers()
+  }, [])
+
+  const fetchCustomers = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/customers`)
+      setCustomers(response.data)
+    } catch (error) {
+      console.error('Error fetching customers:', error)
+    }
+  }
+
+  const addCustomer = async () => {
     if (newCustomer.name.trim()) {
-      const customer = {
-        id: Date.now(),
-        ...newCustomer,
-        notes: [],
-        orders: [],
-        totalRevenue: 0,
-        contacts: 0,
-        touchpoints: 0
+      try {
+        const response = await axios.post(`${API_BASE_URL}/customers`, newCustomer)
+        setCustomers([...customers, response.data])
+        setNewCustomer({ name: '', phone: '', email: '', stage: 'new' })
+      } catch (error) {
+        console.error('Error adding customer:', error)
       }
-      setCustomers([...customers, customer])
-      setNewCustomer({ name: '', phone: '', email: '', stage: 'new' })
     }
   }
 
-  const updateCustomer = (updatedCustomer) => {
-    setCustomers(customers.map(c => c.id === updatedCustomer.id ? updatedCustomer : c))
-    setSelectedCustomer(updatedCustomer)
+  const updateCustomer = async (updatedCustomer) => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer)
+      setCustomers(customers.map(c => c._id === response.data._id ? response.data : c))
+      setSelectedCustomer(response.data)
+    } catch (error) {
+      console.error('Error updating customer:', error)
+    }
   }
 
-  const deleteCustomer = (id) => {
-    setCustomers(customers.filter(c => c.id !== id))
-    setSelectedCustomer(null)
-    setAdminPassword('')
-    setActiveSection('customers')
+  const deleteCustomer = async (id) => {
+    try {
+      await axios.delete(`${API_BASE_URL}/customers/${id}`)
+      setCustomers(customers.filter(c => c._id !== id))
+      setSelectedCustomer(null)
+      setAdminPassword('')
+      setActiveSection('customers')
+    } catch (error) {
+      console.error('Error deleting customer:', error)
+    }
   }
 
-  const addNote = () => {
+  const addNote = async () => {
     if (selectedCustomer && newNote.content.trim()) {
-      const note = {
-        id: Date.now(),
-        ...newNote,
-        timestamp: new Date().toISOString(),
-        isPinned: false,
-        isHighlighted: false
-      }
-      const updatedCustomer = {
-        ...selectedCustomer,
-        notes: [...selectedCustomer.notes, note],
-        contacts: selectedCustomer.contacts + 1,
-        touchpoints: selectedCustomer.touchpoints + 1,
-        stage: selectedCustomer.stage === 'new' ? 'engaged' : selectedCustomer.stage
-      }
-      updateCustomer(updatedCustomer)
-      setNewNote({ type: 'call', content: '', salesAgent: '' })
-    }
-  }
-
-  const toggleNotePinned = (noteId) => {
-    if (selectedCustomer) {
-      const updatedNotes = selectedCustomer.notes.map(note =>
-        note.id === noteId ? { ...note, isPinned: !note.isPinned } : note
-      )
-      updateCustomer({ ...selectedCustomer, notes: updatedNotes })
-    }
-  }
-
-  const toggleNoteHighlighted = (noteId) => {
-    if (selectedCustomer) {
-      const updatedNotes = selectedCustomer.notes.map(note =>
-        note.id === noteId ? { ...note, isHighlighted: !note.isHighlighted } : note
-      )
-      updateCustomer({ ...selectedCustomer, notes: updatedNotes })
-    }
-  }
-
-  const addOrder = () => {
-    if (selectedCustomer && newOrder.amount > 0) {
-      const order = {
-        id: Date.now(),
-        date: new Date().toISOString(),
-        ...newOrder
-      }
-      const updatedCustomer = {
-        ...selectedCustomer,
-        orders: [...selectedCustomer.orders, order],
-        totalRevenue: selectedCustomer.totalRevenue + newOrder.amount,
-        stage: 'ordered'
-      }
-      updateCustomer(updatedCustomer)
-      setNewOrder({ amount: 0, description: '' })
-    }
-  }
-
-  const deleteOrder = (orderId) => {
-    if (selectedCustomer) {
-      const orderToDelete = selectedCustomer.orders.find(order => order.id === orderId)
-      if (orderToDelete) {
+      try {
+        const response = await axios.post(`${API_BASE_URL}/notes`, {
+          ...newNote,
+          customerId: selectedCustomer._id,
+          timestamp: new Date().toISOString(),
+          isPinned: false,
+          isHighlighted: false
+        })
         const updatedCustomer = {
           ...selectedCustomer,
-          orders: selectedCustomer.orders.filter(order => order.id !== orderId),
-          totalRevenue: selectedCustomer.totalRevenue - orderToDelete.amount
+          notes: [...selectedCustomer.notes, response.data],
+          contacts: selectedCustomer.contacts + 1,
+          touchpoints: selectedCustomer.touchpoints + 1,
+          stage: selectedCustomer.stage === 'new' ? 'engaged' : selectedCustomer.stage
         }
-        updateCustomer(updatedCustomer)
+        await updateCustomer(updatedCustomer)
+        setNewNote({ type: 'call', content: '', salesAgent: '' })
+      } catch (error) {
+        console.error('Error adding note:', error)
       }
     }
   }
 
-  const updateOrder = (updatedOrder) => {
+  const toggleNotePinned = async (noteId) => {
     if (selectedCustomer) {
-      const oldOrder = selectedCustomer.orders.find(order => order.id === updatedOrder.id)
-      const updatedCustomer = {
-        ...selectedCustomer,
-        orders: selectedCustomer.orders.map(order => order.id === updatedOrder.id ? updatedOrder : order),
-        totalRevenue: selectedCustomer.totalRevenue - (oldOrder?.amount || 0) + updatedOrder.amount
+      try {
+        const note = selectedCustomer.notes.find(n => n._id === noteId)
+        const response = await axios.put(`${API_BASE_URL}/notes/${noteId}`, {
+          ...note,
+          isPinned: !note.isPinned
+        })
+        const updatedNotes = selectedCustomer.notes.map(n => n._id === noteId ? response.data : n)
+        await updateCustomer({ ...selectedCustomer, notes: updatedNotes })
+      } catch (error) {
+        console.error('Error toggling note pin:', error)
       }
-      updateCustomer(updatedCustomer)
-      setEditingOrder(null)
+    }
+  }
+
+  const toggleNoteHighlighted = async (noteId) => {
+    if (selectedCustomer) {
+      try {
+        const note = selectedCustomer.notes.find(n => n._id === noteId)
+        const response = await axios.put(`${API_BASE_URL}/notes/${noteId}`, {
+          ...note,
+          isHighlighted: !note.isHighlighted
+        })
+        const updatedNotes = selectedCustomer.notes.map(n => n._id === noteId ? response.data : n)
+        await updateCustomer({ ...selectedCustomer, notes: updatedNotes })
+      } catch (error) {
+        console.error('Error toggling note highlight:', error)
+      }
+    }
+  }
+
+  const addOrder = async () => {
+    if (selectedCustomer && newOrder.amount > 0) {
+      try {
+        const response = await axios.post(`${API_BASE_URL}/orders`, {
+          ...newOrder,
+          customerId: selectedCustomer._id,
+          date: new Date().toISOString()
+        })
+        const updatedCustomer = {
+          ...selectedCustomer,
+          orders: [...selectedCustomer.orders, response.data],
+          totalRevenue: selectedCustomer.totalRevenue + newOrder.amount,
+          stage: 'ordered'
+        }
+        await updateCustomer(updatedCustomer)
+        setNewOrder({ amount: 0, description: '' })
+      } catch (error) {
+        console.error('Error adding order:', error)
+      }
+    }
+  }
+
+  const deleteOrder = async (orderId) => {
+    if (selectedCustomer) {
+      try {
+        await axios.delete(`${API_BASE_URL}/orders/${orderId}`)
+        const orderToDelete = selectedCustomer.orders.find(order => order._id === orderId)
+        const updatedCustomer = {
+          ...selectedCustomer,
+          orders: selectedCustomer.orders.filter(order => order._id !== orderId),
+          totalRevenue: selectedCustomer.totalRevenue - orderToDelete.amount
+        }
+        await updateCustomer(updatedCustomer)
+      } catch (error) {
+        console.error('Error deleting order:', error)
+      }
+    }
+  }
+
+  const updateOrder = async (updatedOrder) => {
+    if (selectedCustomer) {
+      try {
+        const response = await axios.put(`${API_BASE_URL}/orders/${updatedOrder._id}`, updatedOrder)
+        const oldOrder = selectedCustomer.orders.find(order => order._id === updatedOrder._id)
+        const updatedCustomer = {
+          ...selectedCustomer,
+          orders: selectedCustomer.orders.map(order => order._id === updatedOrder._id ? response.data : order),
+          totalRevenue: selectedCustomer.totalRevenue - oldOrder.amount + updatedOrder.amount
+        }
+        await updateCustomer(updatedCustomer)
+        setEditingOrder(null)
+      } catch (error) {
+        console.error('Error updating order:', error)
+      }
     }
   }
 
@@ -186,18 +239,16 @@ function App() {
     setIsAdminPortalOpen(false)
   }
 
-  const filteredCustomers = useMemo(() => {
-    return customers.filter(customer =>
-      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.phone.includes(searchQuery)
-    )
-  }, [customers, searchQuery])
+  const filteredCustomers = customers.filter(customer =>
+    customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    customer.phone.includes(searchQuery)
+  )
 
   const calculateKPIs = (customerId) => {
     const filteredCustomers = customerId === 'all' 
       ? customers 
-      : customers.filter(c => c.id.toString() === customerId)
+      : customers.filter(c => c._id.toString() === customerId)
 
     const totalCustomers = filteredCustomers.length
     const orderedCustomers = filteredCustomers.filter(c => c.stage === 'ordered').length
@@ -290,7 +341,7 @@ function App() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredCustomers.map(customer => (
           <Card
-            key={customer.id}
+            key={customer._id}
             className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
             onClick={() => {
               setSelectedCustomer(customer)
@@ -364,7 +415,6 @@ function App() {
               <Input
                 type="number"
                 value={selectedCustomer.totalRevenue}
-                
                 onChange={(e) => updateCustomer({ ...selectedCustomer, totalRevenue: parseFloat(e.target.value) || 0 })}
                 placeholder="Total Revenue (€)"
                 readOnly
@@ -416,14 +466,14 @@ function App() {
                       return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
                     })
                     .map(note => (
-                      <div key={note.id} className={`p-2 rounded ${note.isHighlighted ? 'bg-yellow-100' : 'bg-gray-100'}`}>
+                      <div key={note._id} className={`p-2 rounded ${note.isHighlighted ? 'bg-yellow-100' : 'bg-gray-100'}`}>
                         <div className="flex justify-between items-center mb-1">
                           <span className="font-medium">{note.type}</span>
                           <div className="flex space-x-2">
-                            <button onClick={() => toggleNotePinned(note.id)}>
+                            <button onClick={() => toggleNotePinned(note._id)}>
                               <Pin className={`w-4 h-4 ${note.isPinned ? 'text-blue-500' : 'text-gray-500'}`} />
                             </button>
-                            <button onClick={() => toggleNoteHighlighted(note.id)}>
+                            <button onClick={() => toggleNoteHighlighted(note._id)}>
                               <Star className={`w-4 h-4 ${note.isHighlighted ? 'text-yellow-500' : 'text-gray-500'}`} />
                             </button>
                           </div>
@@ -459,7 +509,7 @@ function App() {
                 </div>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {selectedCustomer.orders.map(order => (
-                    <div key={order.id} className="p-2 bg-gray-100 rounded">
+                    <div key={order._id} className="p-2 bg-gray-100 rounded">
                       <div className="flex justify-between items-center">
                         <span className="font-medium">€{order.amount.toFixed(2)}</span>
                         <span className="text-sm text-gray-500">{new Date(order.date).toLocaleDateString()}</span>
@@ -468,7 +518,7 @@ function App() {
                       {isAdminMode && (
                         <div className="mt-2 flex justify-end space-x-2">
                           <Button variant="secondary" onClick={() => setEditingOrder(order)}>Edit</Button>
-                          <Button variant="danger" onClick={() => deleteOrder(order.id)}>Delete</Button>
+                          <Button variant="danger" onClick={() => deleteOrder(order._id)}>Delete</Button>
                         </div>
                       )}
                     </div>
@@ -492,7 +542,7 @@ function App() {
         <Select id="kpi-filter" value={kpiFilter} onChange={(e) => setKpiFilter(e.target.value)}>
           <option value="all">All Customers</option>
           {customers.map(customer => (
-            <option key={customer.id} value={customer.id.toString()}>{customer.name}</option>
+            <option key={customer._id} value={customer._id.toString()}>{customer.name}</option>
           ))}
         </Select>
       </div>
@@ -626,20 +676,26 @@ function App() {
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                  Admin Login
-                </h3>
-                <div className="mt-2">
-                  <Input
-                    type="password"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    placeholder="Enter admin password"
-                  />
+                <div className="sm:flex sm:items-start">
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                      Admin Login
+                    </h3>
+                    <div className="mt-2">
+                      <Input
+                        type="password"
+                        placeholder="Enter admin password"
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <Button onClick={handleAdminLogin}>Login</Button>
+                <Button onClick={handleAdminLogin}>
+                  Login
+                </Button>
                 <Button variant="secondary" onClick={() => setShowAdminDialog(false)} className="mr-2">
                   Cancel
                 </Button>
@@ -649,7 +705,7 @@ function App() {
         </div>
       )}
 
-      {/* Admin Portal Dialog */}
+      {/* Admin Portal */}
       {isAdminPortalOpen && (
         <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -657,53 +713,23 @@ function App() {
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                  Admin Portal
-                </h3>
-                <div className="mt-2">
-                  {renderAdminSettings()}
+                <div className="sm:flex sm:items-start">
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                      Admin Portal
+                    </h3>
+                    <div className="mt-2">
+                      {renderAdminSettings()}
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <Button onClick={handleAdminLogout}>Logout</Button>
+                <Button onClick={handleAdminLogout}>
+                  Logout
+                </Button>
                 <Button variant="secondary" onClick={() => setIsAdminPortalOpen(false)} className="mr-2">
                   Close
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Order Dialog */}
-      {editingOrder && (
-        <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                  Edit Order
-                </h3>
-                <div className="mt-2 space-y-4">
-                  <Input
-                    type="number"
-                    value={editingOrder.amount}
-                    onChange={(e) => setEditingOrder({ ...editingOrder, amount: parseFloat(e.target.value) || 0 })}
-                    placeholder="Amount"
-                  />
-                  <Input
-                    value={editingOrder.description}
-                    onChange={(e) => setEditingOrder({ ...editingOrder, description: e.target.value })}
-                    placeholder="Description"
-                  />
-                </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <Button onClick={() => updateOrder(editingOrder)}>Save Changes</Button>
-                <Button variant="secondary" onClick={() => setEditingOrder(null)} className="mr-2">
-                  Cancel
                 </Button>
               </div>
             </div>
@@ -719,33 +745,81 @@ function App() {
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                  Change Customer Stage
-                </h3>
-                <div className="mt-2">
-                  <p className="text-sm text-gray-500">
-                    Moving a customer to an earlier stage requires admin privileges. Please enter the admin password to proceed.
-                  </p>
-                  <Input
-                    type="password"
-                    placeholder="Enter admin password"
-                    value={stageChangePassword}
-                    onChange={(e) => setStageChangePassword(e.target.value)}
-                    className="mt-2"
-                  />
+                <div className="sm:flex sm:items-start">
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                      Confirm Stage Change
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">
+                        Are you sure you want to change the stage to {newStage}? This action requires admin approval.
+                      </p>
+                      <Input
+                        type="password"
+                        placeholder="Enter admin password"
+                        value={stageChangePassword}
+                        onChange={(e) => setStageChangePassword(e.target.value)}
+                        className="mt-2"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                 <Button onClick={() => {
                   if (stageChangePassword === 'GULFSTREAM') {
                     updateCustomer({ ...selectedCustomer, stage: newStage });
-                    setStageChangePassword('');
                     setShowStageChangeDialog(false);
+                    setStageChangePassword('');
                   } else {
                     alert('Incorrect password');
                   }
-                }}>Confirm Stage Change</Button>
+                }}>
+                  Confirm
+                </Button>
                 <Button variant="secondary" onClick={() => setShowStageChangeDialog(false)} className="mr-2">
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Order Dialog */}
+      {editingOrder && (
+        <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                      Edit Order
+                    </h3>
+                    <div className="mt-2 space-y-4">
+                      <Input
+                        type="number"
+                        placeholder="Amount (€)"
+                        value={editingOrder.amount}
+                        onChange={(e) => setEditingOrder({ ...editingOrder, amount: parseFloat(e.target.value) || 0 })}
+                      />
+                      <Input
+                        placeholder="Description"
+                        value={editingOrder.description}
+                        onChange={(e) => setEditingOrder({ ...editingOrder, description: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <Button onClick={() => updateOrder(editingOrder)}>
+                  Save Changes
+                </Button>
+                <Button variant="secondary" onClick={() => setEditingOrder(null)} className="mr-2">
                   Cancel
                 </Button>
               </div>
@@ -762,17 +836,33 @@ function App() {
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                  Help & Support
-                </h3>
-                <div className="mt-2">
-                  <p className="text-sm text-gray-500">
-                    Please call admin via 0152 52361741
-                  </p>
+                <div className="sm:flex sm:items-start">
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                      Help & Information
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">
+                        Welcome to the TopGlanz Hannover CRM system. Here are some key features:
+                      </p>
+                      <ul className="list-disc list-inside mt-2 text-sm text-gray-500">
+                        <li>Add and manage customers</li>
+                        <li>Track customer interactions with notes</li>
+                        <li>Record customer orders</li>
+                        <li>View important KPIs</li>
+                        <li>Admin features for advanced management</li>
+                      </ul>
+                      <p className="mt-2 text-sm text-gray-500">
+                        For more detailed information or support, please contact your system administrator.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <Button onClick={() => setShowHelpDialog(false)}>Close</Button>
+                <Button variant="secondary" onClick={() => setShowHelpDialog(false)}>
+                  Close
+                </Button>
               </div>
             </div>
           </div>
