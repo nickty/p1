@@ -257,7 +257,7 @@ function App() {
 
     const activityPerSalesAgent = {}
     filteredCustomers.forEach(customer => {
-      customer.notes.forEach(note => {
+      customer?.notes?.forEach(note => {
         activityPerSalesAgent[note.salesAgent] = (activityPerSalesAgent[note.salesAgent] || 0) + 1
       })
     })
