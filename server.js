@@ -11,9 +11,10 @@ const PORT = process.env.PORT || 5000;
 
 // Allow CORS for your specific frontend domain
 const corsOptions = {
-  origin: 'http://7websites.com/api', // Replace this with your actual server IP or domain
+  origin: ['http://7websites.com', 'http://www.7websites.com'], // add both variations
   optionsSuccessStatus: 200,
 };
+
 
 app.use(cors(corsOptions));
 app.use(express.json());
