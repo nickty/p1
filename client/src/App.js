@@ -635,31 +635,41 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">TopGlanz Hannover CRM</h1>
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Button variant="secondary" onClick={() => setShowAdminDialog(true)}>
-                <Settings className="w-5 h-5 mr-2" />
-                Settings
-              </Button>
-              {isAdminMode && (
-                <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-white bg-green-400" />
-              )}
-            </div>
-            <Select
-              value={activeSection}
-              onChange={(e) => setActiveSection(e.target.value)}
-              className="text-sm"
+      <header className="bg-black shadow-md">
+      <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center text-white">
+        {/* App Title */}
+        <h1 onClick={ e => setActiveSection('customers')} className="text-3xl font-bold text-white">TopGlanz Hannover CRM</h1>
+
+        {/* Settings Button and Section Selector */}
+        <div className="flex items-center space-x-6">
+          {/* Settings Button with Icon */}
+          <div className="relative">
+            <Button
+              variant="secondary"
+              onClick={() => setShowAdminDialog(true)}
+              className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md flex items-center"
             >
-              <option value="customers">Customers</option>
-              <option value="details">Customer Details</option>
-              {adminSettings.showKPIs && <option value="kpis">KPIs</option>}
-            </Select>
+              <Settings className="w-5 h-5 mr-2 text-gray-300" />
+              <span>Settings</span>
+            </Button>
+            {isAdminMode && (
+              <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-black bg-green-400" />
+            )}
           </div>
+
+          {/* Section Selector Dropdown */}
+          <Select
+            value={activeSection}
+            onChange={(e) => setActiveSection(e.target.value)}
+            className="bg-gray-700 text-white text-sm px-3 py-2 rounded-md border border-gray-500 focus:outline-none"
+          >
+            <option value="customers">Customers</option>
+            <option value="details">Customer Details</option>
+            {adminSettings.showKPIs && <option value="kpis">KPIs</option>}
+          </Select>
         </div>
-      </header>
+      </div>
+    </header>
       <main>
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           {activeSection === 'customers' && renderCustomers()}
