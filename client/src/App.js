@@ -69,6 +69,7 @@ function App() {
   const fetchCustomers = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/customers`)
+      console.log("see customer", response.data)
       setCustomers(response.data)
     } catch (error) {
       console.error('Error fetching customers:', error)
@@ -87,15 +88,42 @@ function App() {
     }
   }
 
+  // const updateCustomer = async (updatedCustomer) => {
+  //   try {
+  //     const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer)
+  //     setCustomers(customers.map(c => c._id === response.data._id ? response.data : c))
+  //     setSelectedCustomer(response.data)
+  //   } catch (error) {
+  //     console.error('Error updating customer:', error)
+  //   }
+  // }
+
   const updateCustomer = async (updatedCustomer) => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer)
+      // First, check if the customer still exists
+      const checkResponse = await axios.get(`${API_BASE_URL}/customers/${updatedCustomer._id}`)
+      if (!checkResponse.data) {
+        throw new Error('Customer not found')
+      }
+
+      const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updateCustomer)
       setCustomers(customers.map(c => c._id === response.data._id ? response.data : c))
       setSelectedCustomer(response.data)
+      // toast.success('Customer updated successfully!')
     } catch (error) {
       console.error('Error updating customer:', error)
+      if (error.response && error.response.status === 404) {
+        console.log('Customer not found. They may have been deleted.')
+        // Remove the customer from the local state
+        setCustomers(customers.filter(c => c._id !== updatedCustomer._id))
+        setSelectedCustomer(null)
+        setActiveSection('customers')
+      } else {
+        console.log('Failed to update customer. Please try again.')
+      }
     }
   }
+
 
   // const deleteCustomer = async (id) => {
   //   try {
@@ -279,7 +307,7 @@ function App() {
         <div
           key={stage}
           className={`flex-1 p-2 text-center ${stages.indexOf(currentStage) >= index
-              ? 'bg-black-600 text-white'
+              ? 'bg-blue-600 text-white'
               : 'bg-gray-200 text-gray-800'
             } ${index === 0 ? 'rounded-l-lg' : ''} ${index === stages.length - 1 ? 'rounded-r-lg' : ''}`}
         >
@@ -318,7 +346,7 @@ function App() {
 
         <button
           onClick={addCustomer}
-          className="w-full bg-gray-600 text-white font-semibold py-2 rounded-md flex items-center justify-center hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="w-full bg-gray-600 text-white font-semibold py-2 rounded-md flex items-center justify-center hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
