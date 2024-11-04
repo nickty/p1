@@ -84,6 +84,24 @@ app.get('/api/customers/:id', async (req, res) => {
   }
 });
 
+// Update customer information by ID
+app.put('/api/customers/:id', async (req, res) => {
+  try {
+    const updatedCustomer = await Customer.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!updatedCustomer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+    res.json(updatedCustomer);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+
 app.get('/api/customers/:id/notes', async (req, res) => {
   try {
     const notes = await Note.find({ customerId: req.params.id });
