@@ -11,7 +11,8 @@ const PORT = process.env.PORT || 5000;
 
 // Allow CORS for your specific frontend domain
 const corsOptions = {
-  origin: ['http://7websites.com', 'http://www.7websites.com', 'http://174.140.17.185:5000'], // add both variations
+  // origin: ['http://7websites.com', 'http://www.7websites.com', 'http://174.140.17.185:5000'], // add both variations
+  origin: '*',
   optionsSuccessStatus: 200,
 };
 
@@ -140,4 +141,4 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
