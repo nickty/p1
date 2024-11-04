@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_URL = 'http://7websites.com/api'
+// const API_URL = 'http://174.140.17.185:5000/api'
 // const API_URL = axios.create({
 //   baseURL: 'http://134.209.246.121:5000/api', // Use your server's IP
 // });
