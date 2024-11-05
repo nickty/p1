@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
 import { Settings, Pin, Star, Search, X } from 'lucide-react'
+import debounce from 'lodash.debounce';
+
 
 // Assuming you've set up a proxy in package.json or using environment variables
 const API_BASE_URL = 'http://7websites.com/api'
@@ -88,6 +90,37 @@ function App() {
     }
   }
 
+  // const debouncedUpdateCustomer = debounce(async (updatedCustomer) => {
+  //   try {
+  //     const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer);
+  //     setCustomers(customers.map(c => (c._id === response.data._id ? response.data : c)));
+  //     setSelectedCustomer(response.data);
+  //   } catch (error) {
+  //     console.error('Error updating customer:', error);
+  //   }
+  // }, 750);
+
+  const debouncedUpdateCustomer = useCallback(
+    debounce(async (updatedCustomer) => {
+      try {
+        const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer);
+        setCustomers(customers.map(c => (c._id === response.data._id ? response.data : c)));
+        setSelectedCustomer(response.data);
+      } catch (error) {
+        console.error('Error updating customer:', error);
+      }
+    }, 750), // Adjust delay to 750 ms (or another suitable duration)
+    [customers] // Dependencies
+  );
+  
+
+  const handleChange = (field, value) => {
+    const updatedCustomer = { ...selectedCustomer, [field]: value };
+    setSelectedCustomer(updatedCustomer);  // Update local state immediately
+    debouncedUpdateCustomer(updatedCustomer);  // Trigger debounced API update
+  };
+
+
   // const updateCustomer = async (updatedCustomer) => {
   //   try {
   //     const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer)
@@ -106,7 +139,7 @@ function App() {
         throw new Error('Customer not found')
       }
 
-      const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updateCustomer)
+      const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer)
       setCustomers(customers.map(c => c._id === response.data._id ? response.data : c))
       setSelectedCustomer(response.data)
       // toast.success('Customer updated successfully!')
@@ -137,30 +170,59 @@ function App() {
   //   }
   // }
 
+  // const addNote = async () => {
+  //   if (selectedCustomer && newNote.content.trim()) {
+  //     try {
+  //       const response = await axios.post(`${API_BASE_URL}/notes`, {
+  //         ...newNote,
+  //         customerId: selectedCustomer._id,
+  //         timestamp: new Date().toISOString(),
+  //         isPinned: false,
+  //         isHighlighted: false
+  //       })
+  //       const updatedCustomer = {
+  //         ...selectedCustomer,
+  //         notes: [...selectedCustomer.notes, response.data],
+  //         contacts: selectedCustomer.contacts + 1,
+  //         touchpoints: selectedCustomer.touchpoints + 1,
+  //         stage: selectedCustomer.stage === 'new' ? 'engaged' : selectedCustomer.stage
+  //       }
+  //       await updateCustomer(updatedCustomer)
+  //       setNewNote({ type: 'call', content: '', salesAgent: '' })
+  //     } catch (error) {
+  //       console.error('Error adding note:', error)
+  //     }
+  //   }
+  // }
+
   const addNote = async () => {
     if (selectedCustomer && newNote.content.trim()) {
       try {
-        const response = await axios.post(`${API_BASE_URL}/notes`, {
+        // Make API call to add note specifically to the selected customer
+        const response = await axios.put(`${API_BASE_URL}/customers/${selectedCustomer._id}/notes`, {
           ...newNote,
-          customerId: selectedCustomer._id,
           timestamp: new Date().toISOString(),
           isPinned: false,
-          isHighlighted: false
-        })
+          isHighlighted: false,
+        });
+  
+        // Update the selectedCustomer state with the new note locally after the API call
         const updatedCustomer = {
           ...selectedCustomer,
           notes: [...selectedCustomer.notes, response.data],
           contacts: selectedCustomer.contacts + 1,
           touchpoints: selectedCustomer.touchpoints + 1,
-          stage: selectedCustomer.stage === 'new' ? 'engaged' : selectedCustomer.stage
-        }
-        await updateCustomer(updatedCustomer)
-        setNewNote({ type: 'call', content: '', salesAgent: '' })
+          stage: selectedCustomer.stage === 'new' ? 'engaged' : selectedCustomer.stage,
+        };
+        
+        setSelectedCustomer(updatedCustomer); // Update local state with the new note
+        setNewNote({ type: 'call', content: '', salesAgent: '' }); // Reset the new note form
       } catch (error) {
-        console.error('Error adding note:', error)
+        console.error('Error adding note:', error);
       }
     }
-  }
+  };
+  
 
   const toggleNotePinned = async (noteId) => {
     if (selectedCustomer) {
@@ -194,27 +256,53 @@ function App() {
     }
   }
 
+  // const addOrder = async () => {
+  //   if (selectedCustomer && newOrder.amount > 0) {
+  //     try {
+  //       const response = await axios.post(`${API_BASE_URL}/orders`, {
+  //         ...newOrder,
+  //         customerId: selectedCustomer._id,
+  //         date: new Date().toISOString()
+  //       })
+  //       const updatedCustomer = {
+  //         ...selectedCustomer,
+  //         orders: [...selectedCustomer.orders, response.data],
+  //         totalRevenue: selectedCustomer.totalRevenue + newOrder.amount,
+  //         stage: 'ordered'
+  //       }
+  //       await updateCustomer(updatedCustomer)
+  //       setNewOrder({ amount: 0, description: '' })
+  //     } catch (error) {
+  //       console.error('Error adding order:', error)
+  //     }
+  //   }
+  // }
+
   const addOrder = async () => {
     if (selectedCustomer && newOrder.amount > 0) {
       try {
-        const response = await axios.post(`${API_BASE_URL}/orders`, {
+        // Make an API call to add an order specifically to the selected customer
+        const response = await axios.put(`${API_BASE_URL}/customers/${selectedCustomer._id}/orders`, {
           ...newOrder,
-          customerId: selectedCustomer._id,
-          date: new Date().toISOString()
-        })
+          date: new Date().toISOString(),
+        });
+  
+        // Update the selectedCustomer state with the new order locally after the API call
         const updatedCustomer = {
           ...selectedCustomer,
           orders: [...selectedCustomer.orders, response.data],
           totalRevenue: selectedCustomer.totalRevenue + newOrder.amount,
-          stage: 'ordered'
-        }
-        await updateCustomer(updatedCustomer)
-        setNewOrder({ amount: 0, description: '' })
+          stage: 'ordered',
+        };
+        
+        setSelectedCustomer(updatedCustomer); // Update local state with the new order
+        setNewOrder({ amount: 0, description: '' }); // Reset the new order form
       } catch (error) {
-        console.error('Error adding order:', error)
+        console.error('Error adding order:', error);
       }
     }
-  }
+  };
+  
 
   const deleteOrder = async (orderId) => {
     if (selectedCustomer) {
@@ -307,8 +395,8 @@ function App() {
         <div
           key={stage}
           className={`flex-1 p-2 text-center ${stages.indexOf(currentStage) >= index
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-200 text-gray-800'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-200 text-gray-800'
             } ${index === 0 ? 'rounded-l-lg' : ''} ${index === stages.length - 1 ? 'rounded-r-lg' : ''}`}
         >
           {stage}
@@ -424,17 +512,23 @@ function App() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               value={selectedCustomer.name}
-              onChange={(e) => updateCustomer({ ...selectedCustomer, name: e.target.value })}
+              onChange={(e) => handleChange('name', e.target.value)}
               placeholder="Name"
             />
+
+            {/* <Input
+              value={selectedCustomer.name}
+              onChange={(e) => updateCustomer({ ...selectedCustomer, name: e.target.value })}
+              placeholder="Name"
+            /> */}
             <Input
               value={selectedCustomer.phone}
-              onChange={(e) => updateCustomer({ ...selectedCustomer, phone: e.target.value })}
+              onChange={(e) => handleChange('phone', e.target.value)}
               placeholder="Phone"
             />
             <Input
               value={selectedCustomer.email}
-              onChange={(e) => updateCustomer({ ...selectedCustomer, email: e.target.value })}
+              onChange={(e) => handleChange('email', e.target.value)}
               placeholder="Email"
             />
             {adminSettings.showCustomerStage && (

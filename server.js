@@ -111,7 +111,7 @@ app.get('/api/customers/:id/notes', async (req, res) => {
   }
 });
 
-app.post('/api/customers/:id/notes', async (req, res) => {
+app.put('/api/customers/:id/notes', async (req, res) => {
   const note = new Note({
     ...req.body,
     customerId: req.params.id,
@@ -134,7 +134,7 @@ app.get('/api/customers/:id/orders', async (req, res) => {
   }
 });
 
-app.post('/api/customers/:id/orders', async (req, res) => {
+app.put('/api/customers/:id/orders', async (req, res) => {
   const order = new Order({
     ...req.body,
     customerId: req.params.id,
