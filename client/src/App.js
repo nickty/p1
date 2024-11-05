@@ -114,22 +114,47 @@ function App() {
   // );
 
 
-  const debouncedUpdateCustomer = useCallback(
-    debounce(async (updatedCustomer) => {
-      try {
-        const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer);
+  // const debouncedUpdateCustomer = useCallback(
+  //   debounce(async (updatedCustomer) => {
+  //     try {
+  //       const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer);
 
-        // Update state without directly depending on `customers`
-        setCustomers(prevCustomers =>
-          prevCustomers.map(c => (c._id === response.data._id ? response.data : c))
-        );
-        setSelectedCustomer(response.data);
-      } catch (error) {
-        console.error('Error updating customer:', error);
-      }
-    }, 750), // Adjust delay to 750 ms (or another suitable duration)
-    [] // Empty dependency array since we handle state updates internally
+  //       // Update state without directly depending on `customers`
+  //       setCustomers(prevCustomers =>
+  //         prevCustomers.map(c => (c._id === response.data._id ? response.data : c))
+  //       );
+  //       setSelectedCustomer(response.data);
+  //     } catch (error) {
+  //       console.error('Error updating customer:', error);
+  //     }
+  //   }, 750), // Adjust delay to 750 ms (or another suitable duration)
+  //   [] // Empty dependency array since we handle state updates internally
+  // );
+
+
+
+  // Define the debounced function outside useCallback
+  const debouncedUpdateCustomerFunc = debounce(async (updatedCustomer, setCustomers, setSelectedCustomer) => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer);
+
+      // Update state with the response
+      setCustomers(prevCustomers =>
+        prevCustomers.map(c => (c._id === response.data._id ? response.data : c))
+      );
+      setSelectedCustomer(response.data);
+    } catch (error) {
+      console.error('Error updating customer:', error);
+    }
+  }, 750);
+
+  const debouncedUpdateCustomer = useCallback(
+    (updatedCustomer) => {
+      debouncedUpdateCustomerFunc(updatedCustomer, setCustomers, setSelectedCustomer);
+    },
+    [setCustomers, setSelectedCustomer] // Add setState functions as dependencies
   );
+
 
 
 
