@@ -100,19 +100,38 @@ function App() {
   //   }
   // }, 750);
 
+  // const debouncedUpdateCustomer = useCallback(
+  //   debounce(async (updatedCustomer) => {
+  //     try {
+  //       const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer);
+  //       setCustomers(customers.map(c => (c._id === response.data._id ? response.data : c)));
+  //       setSelectedCustomer(response.data);
+  //     } catch (error) {
+  //       console.error('Error updating customer:', error);
+  //     }
+  //   }, 750), // Adjust delay to 750 ms (or another suitable duration)
+  //   [customers] // Dependencies
+  // );
+
+
   const debouncedUpdateCustomer = useCallback(
     debounce(async (updatedCustomer) => {
       try {
         const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer);
-        setCustomers(customers.map(c => (c._id === response.data._id ? response.data : c)));
+
+        // Update state without directly depending on `customers`
+        setCustomers(prevCustomers =>
+          prevCustomers.map(c => (c._id === response.data._id ? response.data : c))
+        );
         setSelectedCustomer(response.data);
       } catch (error) {
         console.error('Error updating customer:', error);
       }
     }, 750), // Adjust delay to 750 ms (or another suitable duration)
-    [customers] // Dependencies
+    [] // Empty dependency array since we handle state updates internally
   );
-  
+
+
 
   const handleChange = (field, value) => {
     const updatedCustomer = { ...selectedCustomer, [field]: value };
@@ -205,7 +224,7 @@ function App() {
           isPinned: false,
           isHighlighted: false,
         });
-  
+
         // Update the selectedCustomer state with the new note locally after the API call
         const updatedCustomer = {
           ...selectedCustomer,
@@ -214,7 +233,7 @@ function App() {
           touchpoints: selectedCustomer.touchpoints + 1,
           stage: selectedCustomer.stage === 'new' ? 'engaged' : selectedCustomer.stage,
         };
-        
+
         setSelectedCustomer(updatedCustomer); // Update local state with the new note
         setNewNote({ type: 'call', content: '', salesAgent: '' }); // Reset the new note form
       } catch (error) {
@@ -222,7 +241,7 @@ function App() {
       }
     }
   };
-  
+
 
   const toggleNotePinned = async (noteId) => {
     if (selectedCustomer) {
@@ -286,7 +305,7 @@ function App() {
           ...newOrder,
           date: new Date().toISOString(),
         });
-  
+
         // Update the selectedCustomer state with the new order locally after the API call
         const updatedCustomer = {
           ...selectedCustomer,
@@ -294,7 +313,7 @@ function App() {
           totalRevenue: selectedCustomer.totalRevenue + newOrder.amount,
           stage: 'ordered',
         };
-        
+
         setSelectedCustomer(updatedCustomer); // Update local state with the new order
         setNewOrder({ amount: 0, description: '' }); // Reset the new order form
       } catch (error) {
@@ -302,7 +321,7 @@ function App() {
       }
     }
   };
-  
+
 
   const deleteOrder = async (orderId) => {
     if (selectedCustomer) {
