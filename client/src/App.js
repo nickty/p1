@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import axios from 'axios'
 import { Settings, Pin, Star, Search, X } from 'lucide-react'
 import debounce from 'lodash.debounce';
@@ -133,27 +133,32 @@ function App() {
 
 
 
-  // Define the debounced function outside useCallback
-  const debouncedUpdateCustomerFunc = debounce(async (updatedCustomer, setCustomers, setSelectedCustomer) => {
-    try {
-      const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer);
 
-      // Update state with the response
-      setCustomers(prevCustomers =>
-        prevCustomers.map(c => (c._id === response.data._id ? response.data : c))
-      );
-      setSelectedCustomer(response.data);
-    } catch (error) {
-      console.error('Error updating customer:', error);
-    }
-  }, 750);
+  const debouncedUpdateCustomerFunc = useMemo(
+    () =>
+      debounce(async (updatedCustomer, setCustomers, setSelectedCustomer) => {
+        try {
+          const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer);
+
+          // Update state with the response
+          setCustomers(prevCustomers =>
+            prevCustomers.map(c => (c._id === response.data._id ? response.data : c))
+          );
+          setSelectedCustomer(response.data);
+        } catch (error) {
+          console.error('Error updating customer:', error);
+        }
+      }, 750),
+    [] // Empty dependency array to ensure memoization
+  );
 
   const debouncedUpdateCustomer = useCallback(
     (updatedCustomer) => {
       debouncedUpdateCustomerFunc(updatedCustomer, setCustomers, setSelectedCustomer);
     },
-    [setCustomers, setSelectedCustomer] // Add setState functions as dependencies
+    [debouncedUpdateCustomerFunc, setCustomers, setSelectedCustomer] // Dependency array
   );
+
 
 
 
