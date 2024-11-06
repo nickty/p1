@@ -75,14 +75,40 @@ app.post('/api/customers', async (req, res) => {
   }
 });
 
+// app.get('/api/customers/:id', async (req, res) => {
+//   try {
+//     const customer = await Customer.findById(req.params.id);
+//     res.json(customer);
+//   } catch (error) {
+//     res.status(404).json({ message: 'Customer not found' });
+//   }
+// });
+
 app.get('/api/customers/:id', async (req, res) => {
   try {
+    // Find the customer by ID
     const customer = await Customer.findById(req.params.id);
-    res.json(customer);
+
+    if (!customer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    // Find notes and orders related to the customer
+    const notes = await Note.find({ customerId: req.params.id });
+    const orders = await Order.find({ customerId: req.params.id });
+
+    // Send the customer data along with notes and orders
+    res.json({
+      ...customer.toObject(),
+      notes,
+      orders,
+    });
   } catch (error) {
-    res.status(404).json({ message: 'Customer not found' });
+    console.error('Error fetching customer data:', error);
+    res.status(500).json({ message: 'Error fetching customer data' });
   }
 });
+
 
 // Update customer information by ID
 app.put('/api/customers/:id', async (req, res) => {
