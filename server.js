@@ -207,6 +207,37 @@ app.put('/api/customers/:id/orders', async (req, res) => {
   }
 });
 
+
+// pin and hightlight 
+// Update a specific note's pinned or highlighted status
+app.put('/api/notes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedFields = {};
+
+    // Only update provided fields
+    if (req.body.isPinned !== undefined) {
+      updatedFields.isPinned = req.body.isPinned;
+    }
+    if (req.body.isHighlighted !== undefined) {
+      updatedFields.isHighlighted = req.body.isHighlighted;
+    }
+
+    // Find and update the note
+    const updatedNote = await Note.findByIdAndUpdate(id, updatedFields, { new: true });
+
+    if (!updatedNote) {
+      return res.status(404).json({ message: 'Note not found' });
+    }
+
+    res.json(updatedNote);
+  } catch (error) {
+    console.error('Error updating note:', error);
+    res.status(500).json({ message: 'Error updating note' });
+  }
+});
+
+
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'client/build')));
 

@@ -852,7 +852,7 @@ function App() {
               className="bg-gray-700 text-white text-sm px-3 py-2 rounded-md border border-gray-500 focus:outline-none"
             >
               <option value="customers">Customers</option>
-              <option value="details">Customer Details</option>
+              {/* <option value="details">Customer Details</option> */}
               {adminSettings.showKPIs && <option value="kpis">KPIs</option>}
             </Select>
           </div>
