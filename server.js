@@ -56,14 +56,44 @@ const Note = mongoose.model('Note', noteSchema);
 const Order = mongoose.model('Order', orderSchema);
 
 // API routes for customers, notes, and orders
+// app.get('/api/customers', async (req, res) => {
+//   try {
+//     const customers = await Customer.find();
+//     res.json(customers);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// });
+
 app.get('/api/customers', async (req, res) => {
   try {
+    // Fetch all customers from the database
     const customers = await Customer.find();
-    res.json(customers);
+
+    // For each customer, retrieve associated notes and orders
+    const customersWithDetails = await Promise.all(
+      customers.map(async (customer) => {
+        // Fetch notes and orders related to the customer
+        const notes = await Note.find({ customerId: customer._id });
+        const orders = await Order.find({ customerId: customer._id });
+
+        // Return the customer data with associated notes and orders
+        return {
+          ...customer.toObject(),
+          notes,
+          orders,
+        };
+      })
+    );
+
+    // Send the complete customer list with notes and orders
+    res.json(customersWithDetails);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error fetching customers:', error);
+    res.status(500).json({ message: 'Error fetching customers' });
   }
 });
+
 
 app.post('/api/customers', async (req, res) => {
   const customer = new Customer(req.body);
