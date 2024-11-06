@@ -244,66 +244,77 @@ function App() {
   //   }
   // }
 
-  const addNote = async () => {
-    if (selectedCustomer && newNote.content.trim()) {
-      try {
-        // Make API call to add note specifically to the selected customer
-        const response = await axios.put(`${API_BASE_URL}/customers/${selectedCustomer._id}/notes`, {
-          ...newNote,
-          timestamp: new Date().toISOString(),
-          isPinned: false,
-          isHighlighted: false,
-        });
+ // Function to add a note without page reload
+const addNote = async () => {
+  if (selectedCustomer && newNote.content.trim()) {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/customers/${selectedCustomer._id}/notes`, {
+        ...newNote,
+        timestamp: new Date().toISOString(),
+        isPinned: false,
+        isHighlighted: false,
+      });
 
-        // Update the selectedCustomer state with the new note locally after the API call
-        const updatedCustomer = {
-          ...selectedCustomer,
-          notes: [...selectedCustomer.notes, response.data],
-          contacts: selectedCustomer.contacts + 1,
-          touchpoints: selectedCustomer.touchpoints + 1,
-          stage: selectedCustomer.stage === 'new' ? 'engaged' : selectedCustomer.stage,
-        };
+      // Update selectedCustomer with new note without reload
+      const updatedCustomer = {
+        ...selectedCustomer,
+        notes: [...selectedCustomer.notes, response.data],
+        contacts: selectedCustomer.contacts + 1,
+        touchpoints: selectedCustomer.touchpoints + 1,
+        stage: selectedCustomer.stage === 'new' ? 'engaged' : selectedCustomer.stage,
+      };
 
-        setSelectedCustomer(updatedCustomer); // Update local state with the new note
-        setNewNote({ type: 'call', content: '', salesAgent: '' }); // Reset the new note form
-      } catch (error) {
-        console.error('Error adding note:', error);
-      }
-    }
-  };
-
-
-  const toggleNotePinned = async (noteId) => {
-    if (selectedCustomer) {
-      try {
-        const note = selectedCustomer.notes.find(n => n._id === noteId)
-        const response = await axios.put(`${API_BASE_URL}/notes/${noteId}`, {
-          ...note,
-          isPinned: !note.isPinned
-        })
-        const updatedNotes = selectedCustomer.notes.map(n => n._id === noteId ? response.data : n)
-        await updateCustomer({ ...selectedCustomer, notes: updatedNotes })
-      } catch (error) {
-        console.error('Error toggling note pin:', error)
-      }
+      setSelectedCustomer(updatedCustomer);
+      setNewNote({ type: 'call', content: '', salesAgent: '' });
+    } catch (error) {
+      console.error('Error adding note:', error);
     }
   }
+};
 
-  const toggleNoteHighlighted = async (noteId) => {
-    if (selectedCustomer) {
-      try {
-        const note = selectedCustomer.notes.find(n => n._id === noteId)
-        const response = await axios.put(`${API_BASE_URL}/notes/${noteId}`, {
-          ...note,
-          isHighlighted: !note.isHighlighted
-        })
-        const updatedNotes = selectedCustomer.notes.map(n => n._id === noteId ? response.data : n)
-        await updateCustomer({ ...selectedCustomer, notes: updatedNotes })
-      } catch (error) {
-        console.error('Error toggling note highlight:', error)
-      }
+// Function to toggle the "isPinned" status of a note without reload
+const toggleNotePinned = async (noteId) => {
+  if (selectedCustomer) {
+    try {
+      const note = selectedCustomer.notes.find(n => n._id === noteId);
+      const response = await axios.put(`${API_BASE_URL}/notes/${noteId}`, {
+        ...note,
+        isPinned: !note.isPinned,
+      });
+
+      // Update the note within selectedCustomer without reload
+      const updatedNotes = selectedCustomer.notes.map(n =>
+        n._id === noteId ? response.data : n
+      );
+      const updatedCustomer = { ...selectedCustomer, notes: updatedNotes };
+      setSelectedCustomer(updatedCustomer);
+    } catch (error) {
+      console.error('Error toggling note pin:', error);
     }
   }
+};
+
+// Function to toggle the "isHighlighted" status of a note without reload
+const toggleNoteHighlighted = async (noteId) => {
+  if (selectedCustomer) {
+    try {
+      const note = selectedCustomer.notes.find(n => n._id === noteId);
+      const response = await axios.put(`${API_BASE_URL}/notes/${noteId}`, {
+        ...note,
+        isHighlighted: !note.isHighlighted,
+      });
+
+      // Update the note within selectedCustomer without reload
+      const updatedNotes = selectedCustomer.notes.map(n =>
+        n._id === noteId ? response.data : n
+      );
+      const updatedCustomer = { ...selectedCustomer, notes: updatedNotes };
+      setSelectedCustomer(updatedCustomer);
+    } catch (error) {
+      console.error('Error toggling note highlight:', error);
+    }
+  }
+};
 
   // const addOrder = async () => {
   //   if (selectedCustomer && newOrder.amount > 0) {

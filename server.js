@@ -152,21 +152,52 @@ app.get('/api/customers/:id', async (req, res) => {
 
 
 // Update customer information by ID
+// app.put('/api/customers/:id', async (req, res) => {
+//   try {
+//     const updatedCustomer = await Customer.findByIdAndUpdate(
+//       req.params.id,
+//       req.body,
+//       { new: true, runValidators: true }
+//     );
+//     if (!updatedCustomer) {
+//       return res.status(404).json({ message: 'Customer not found' });
+//     }
+//     res.json(updatedCustomer);
+//   } catch (error) {
+//     res.status(400).json({ message: error.message });
+//   }
+// });
+
+// Update customer information by ID and return complete customer details
 app.put('/api/customers/:id', async (req, res) => {
   try {
+    // Update the customer information
     const updatedCustomer = await Customer.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true, runValidators: true }
     );
+
+    // If customer is not found, send a 404 error
     if (!updatedCustomer) {
       return res.status(404).json({ message: 'Customer not found' });
     }
-    res.json(updatedCustomer);
+
+    // Retrieve associated notes and orders for the updated customer
+    const notes = await Note.find({ customerId: req.params.id });
+    const orders = await Order.find({ customerId: req.params.id });
+
+    // Return the updated customer with associated notes and orders
+    res.json({
+      ...updatedCustomer.toObject(),
+      notes,
+      orders,
+    });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
+
 
 
 app.get('/api/customers/:id/notes', async (req, res) => {
