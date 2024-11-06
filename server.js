@@ -36,13 +36,24 @@ const customerSchema = new mongoose.Schema({
   touchpoints: { type: Number, default: 0 },
 });
 
+// const noteSchema = new mongoose.Schema({
+//   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+//   type: { type: String, enum: ['call', 'email'] },
+//   content: String,
+//   timestamp: { type: Date, default: Date.now },
+//   salesAgent: String,
+// });
+
 const noteSchema = new mongoose.Schema({
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
   type: { type: String, enum: ['call', 'email'] },
   content: String,
   timestamp: { type: Date, default: Date.now },
   salesAgent: String,
+  isPinned: { type: Boolean, default: false },       // New field for pin status
+  isHighlighted: { type: Boolean, default: false }   // New field for highlight status
 });
+
 
 const orderSchema = new mongoose.Schema({
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
