@@ -504,7 +504,7 @@ const toggleNoteHighlighted = async (noteId) => {
       </div>
 
 
-      <div className="relative">
+      {/* <div className="relative">
         <Input
           placeholder="Search customers..."
           value={searchQuery}
@@ -520,7 +520,25 @@ const toggleNoteHighlighted = async (noteId) => {
             <X className="w-5 h-5 text-gray-400" />
           </button>
         )}
+      </div> */}
+      <div className="relative">
+        <Input
+          placeholder="Search customers..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-12 pr-10 py-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150"
+        />
+        <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 hover:text-gray-600"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        )}
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredCustomers.map(customer => (
           <Card
