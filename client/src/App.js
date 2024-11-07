@@ -66,7 +66,7 @@ function App() {
 
   useEffect(() => {
     fetchCustomers()
-  }, [])
+  }, [activeSection])
 
   const fetchCustomers = async () => {
     try {
