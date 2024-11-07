@@ -855,7 +855,7 @@ const toggleNoteHighlighted = async (noteId) => {
       <header className="bg-black shadow-md">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center text-white">
           {/* App Title */}
-          <h1 onClick={e => setActiveSection('customers')} className="text-3xl font-bold text-white">TopGlanz Hannover CRM</h1>
+          <h1 onClick={e => setActiveSection('customers')} className="text-3xl font-bold text-white cursor-pointer">TopGlanz Hannover CRM</h1>
 
           {/* Settings Button and Section Selector */}
           <div className="flex items-center space-x-6">
