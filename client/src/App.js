@@ -130,12 +130,13 @@ function App() {
   const [user, setUser] = useState(null)
 
   const stages = ['new', 'engaged', 'ordered', 'closed lost']
-
+  
   useEffect(() => {
     if (user) {
-      fetchCustomers()
+      fetchCustomers();
     }
-  }, [user, activeSection])
+  }, [user, activeSection, fetchCustomers]);
+  
 
   const fetchCustomers = async () => {
     try {
