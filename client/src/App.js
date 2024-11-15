@@ -131,24 +131,27 @@ function App() {
 
   const stages = ['new', 'engaged', 'ordered', 'closed lost']
   
-  useEffect(() => {
-    if (user) {
-      fetchCustomers();
-    }
-  }, [user, activeSection, fetchCustomers]);
-  
 
-  const fetchCustomers = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/customers`, {
-        headers: { Authorization: `Bearer ${user.token}` }
-      })
-      console.log("see customer", response.data)
-      setCustomers(response.data)
-    } catch (error) {
-      console.error('Error fetching customers:', error)
-    }
+// Define fetchCustomers using useCallback
+const fetchCustomers = useCallback(async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/customers`, {
+      headers: { Authorization: `Bearer ${user.token}` }
+    });
+    console.log("see customer", response.data);
+    setCustomers(response.data);
+  } catch (error) {
+    console.error('Error fetching customers:', error);
   }
+}, [user]); // Add 'user' as a dependency because it is used inside the function
+
+// UseEffect hook that runs fetchCustomers
+useEffect(() => {
+  if (user) {
+    fetchCustomers();
+  }
+}, [user, activeSection, fetchCustomers]);
+
 
   const addCustomer = async () => {
     if (newCustomer.name.trim()) {
