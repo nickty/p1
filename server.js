@@ -3,30 +3,37 @@ const mongoose = require('mongoose');
 const path = require('path');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Allow CORS for your specific frontend domain
 const corsOptions = {
-  // origin: ['http://7websites.com', 'http://www.7websites.com', 'http://174.140.17.185:5000'], // add both variations
   origin: '*',
   optionsSuccessStatus: 200,
 };
 
-
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Connect to MongoDB using the URI from environment variables
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
 
-// Mongoose models for customers, notes, and orders
+// User schema and model
+const userSchema = new mongoose.Schema({
+  username: { type: String, unique: true, required: true },
+  password: { type: String, required: true },
+  role: { type: String, enum: ['admin', 'user'], required: true }
+});
+
+const User = mongoose.model('User', userSchema);
+
+// Existing schemas and models
 const customerSchema = new mongoose.Schema({
   name: String,
   email: String,
@@ -36,24 +43,15 @@ const customerSchema = new mongoose.Schema({
   touchpoints: { type: Number, default: 0 },
 });
 
-// const noteSchema = new mongoose.Schema({
-//   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
-//   type: { type: String, enum: ['call', 'email'] },
-//   content: String,
-//   timestamp: { type: Date, default: Date.now },
-//   salesAgent: String,
-// });
-
 const noteSchema = new mongoose.Schema({
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
   type: { type: String, enum: ['call', 'email'] },
   content: String,
   timestamp: { type: Date, default: Date.now },
   salesAgent: String,
-  isPinned: { type: Boolean, default: false },       // New field for pin status
-  isHighlighted: { type: Boolean, default: false }   // New field for highlight status
+  isPinned: { type: Boolean, default: false },
+  isHighlighted: { type: Boolean, default: false }
 });
-
 
 const orderSchema = new mongoose.Schema({
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
@@ -66,29 +64,77 @@ const Customer = mongoose.model('Customer', customerSchema);
 const Note = mongoose.model('Note', noteSchema);
 const Order = mongoose.model('Order', orderSchema);
 
-// API routes for customers, notes, and orders
-// app.get('/api/customers', async (req, res) => {
-//   try {
-//     const customers = await Customer.find();
-//     res.json(customers);
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// });
+// Middleware to verify JWT token
+const verifyToken = (req, res, next) => {
+  const token = req.header('Authorization')?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'Access denied' });
 
-app.get('/api/customers', async (req, res) => {
   try {
-    // Fetch all customers from the database
-    const customers = await Customer.find();
+    const verified = jwt.verify(token, 'secretToken');
+    req.user = verified;
+    next();
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid token' });
+  }
+};
 
-    // For each customer, retrieve associated notes and orders
+// Initialize admin and user accounts
+const initializeUsers = async () => {
+  const adminExists = await User.findOne({ role: 'admin' });
+  if (!adminExists) {
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+    await User.create({ username: 'admin', password: hashedPassword, role: 'admin' });
+    console.log('Admin account created');
+  }
+
+  const userExists = await User.findOne({ role: 'user' });
+  if (!userExists) {
+    const hashedPassword = await bcrypt.hash('user123', 10);
+    await User.create({ username: 'user', password: hashedPassword, role: 'user' });
+    console.log('User account created');
+  }
+};
+
+initializeUsers();
+
+// Login route
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body;
+  const user = await User.findOne({ username });
+
+  if (!user) return res.status(400).json({ message: 'Invalid username or password' });
+
+  const validPassword = await bcrypt.compare(password, user.password);
+  if (!validPassword) return res.status(400).json({ message: 'Invalid username or password' });
+
+  const token = jwt.sign({ id: user._id, role: user.role }, 'secretToken');
+  res.json({ token, user: { id: user._id, username: user.username, role: user.role } });
+});
+
+// Update user password (admin only)
+app.put('/api/update-password', verifyToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin access required' });
+
+  const { username, newPassword } = req.body;
+  const user = await User.findOne({ username, role: 'user' });
+
+  if (!user) return res.status(404).json({ message: 'User not found' });
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  user.password = hashedPassword;
+  await user.save();
+
+  res.json({ message: 'Password updated successfully' });
+});
+
+// Existing routes with added authentication
+app.get('/api/customers', verifyToken, async (req, res) => {
+  try {
+    const customers = await Customer.find();
     const customersWithDetails = await Promise.all(
       customers.map(async (customer) => {
-        // Fetch notes and orders related to the customer
         const notes = await Note.find({ customerId: customer._id });
         const orders = await Order.find({ customerId: customer._id });
-
-        // Return the customer data with associated notes and orders
         return {
           ...customer.toObject(),
           notes,
@@ -96,8 +142,6 @@ app.get('/api/customers', async (req, res) => {
         };
       })
     );
-
-    // Send the complete customer list with notes and orders
     res.json(customersWithDetails);
   } catch (error) {
     console.error('Error fetching customers:', error);
@@ -105,8 +149,7 @@ app.get('/api/customers', async (req, res) => {
   }
 });
 
-
-app.post('/api/customers', async (req, res) => {
+app.post('/api/customers', verifyToken, async (req, res) => {
   const customer = new Customer(req.body);
   try {
     const newCustomer = await customer.save();
@@ -116,29 +159,14 @@ app.post('/api/customers', async (req, res) => {
   }
 });
 
-// app.get('/api/customers/:id', async (req, res) => {
-//   try {
-//     const customer = await Customer.findById(req.params.id);
-//     res.json(customer);
-//   } catch (error) {
-//     res.status(404).json({ message: 'Customer not found' });
-//   }
-// });
-
-app.get('/api/customers/:id', async (req, res) => {
+app.get('/api/customers/:id', verifyToken, async (req, res) => {
   try {
-    // Find the customer by ID
     const customer = await Customer.findById(req.params.id);
-
     if (!customer) {
       return res.status(404).json({ message: 'Customer not found' });
     }
-
-    // Find notes and orders related to the customer
     const notes = await Note.find({ customerId: req.params.id });
     const orders = await Order.find({ customerId: req.params.id });
-
-    // Send the customer data along with notes and orders
     res.json({
       ...customer.toObject(),
       notes,
@@ -150,44 +178,18 @@ app.get('/api/customers/:id', async (req, res) => {
   }
 });
 
-
-// Update customer information by ID
-// app.put('/api/customers/:id', async (req, res) => {
-//   try {
-//     const updatedCustomer = await Customer.findByIdAndUpdate(
-//       req.params.id,
-//       req.body,
-//       { new: true, runValidators: true }
-//     );
-//     if (!updatedCustomer) {
-//       return res.status(404).json({ message: 'Customer not found' });
-//     }
-//     res.json(updatedCustomer);
-//   } catch (error) {
-//     res.status(400).json({ message: error.message });
-//   }
-// });
-
-// Update customer information by ID and return complete customer details
-app.put('/api/customers/:id', async (req, res) => {
+app.put('/api/customers/:id', verifyToken, async (req, res) => {
   try {
-    // Update the customer information
     const updatedCustomer = await Customer.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true, runValidators: true }
     );
-
-    // If customer is not found, send a 404 error
     if (!updatedCustomer) {
       return res.status(404).json({ message: 'Customer not found' });
     }
-
-    // Retrieve associated notes and orders for the updated customer
     const notes = await Note.find({ customerId: req.params.id });
     const orders = await Order.find({ customerId: req.params.id });
-
-    // Return the updated customer with associated notes and orders
     res.json({
       ...updatedCustomer.toObject(),
       notes,
@@ -198,9 +200,7 @@ app.put('/api/customers/:id', async (req, res) => {
   }
 });
 
-
-
-app.get('/api/customers/:id/notes', async (req, res) => {
+app.get('/api/customers/:id/notes', verifyToken, async (req, res) => {
   try {
     const notes = await Note.find({ customerId: req.params.id });
     res.json(notes);
@@ -209,7 +209,7 @@ app.get('/api/customers/:id/notes', async (req, res) => {
   }
 });
 
-app.put('/api/customers/:id/notes', async (req, res) => {
+app.put('/api/customers/:id/notes', verifyToken, async (req, res) => {
   const note = new Note({
     ...req.body,
     customerId: req.params.id,
@@ -223,7 +223,7 @@ app.put('/api/customers/:id/notes', async (req, res) => {
   }
 });
 
-app.get('/api/customers/:id/orders', async (req, res) => {
+app.get('/api/customers/:id/orders', verifyToken, async (req, res) => {
   try {
     const orders = await Order.find({ customerId: req.params.id });
     res.json(orders);
@@ -232,7 +232,7 @@ app.get('/api/customers/:id/orders', async (req, res) => {
   }
 });
 
-app.put('/api/customers/:id/orders', async (req, res) => {
+app.put('/api/customers/:id/orders', verifyToken, async (req, res) => {
   const order = new Order({
     ...req.body,
     customerId: req.params.id,
@@ -249,29 +249,20 @@ app.put('/api/customers/:id/orders', async (req, res) => {
   }
 });
 
-
-// pin and hightlight 
-// Update a specific note's pinned or highlighted status
-app.put('/api/notes/:id', async (req, res) => {
+app.put('/api/notes/:id', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     const updatedFields = {};
-
-    // Only update provided fields
     if (req.body.isPinned !== undefined) {
       updatedFields.isPinned = req.body.isPinned;
     }
     if (req.body.isHighlighted !== undefined) {
       updatedFields.isHighlighted = req.body.isHighlighted;
     }
-
-    // Find and update the note
     const updatedNote = await Note.findByIdAndUpdate(id, updatedFields, { new: true });
-
     if (!updatedNote) {
       return res.status(404).json({ message: 'Note not found' });
     }
-
     res.json(updatedNote);
   } catch (error) {
     console.error('Error updating note:', error);
@@ -279,13 +270,12 @@ app.put('/api/notes/:id', async (req, res) => {
   }
 });
 
-
-// Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'client/build')));
 
-// The "catchall" handler for any request that doesn't match above routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
+
+console.log('Server code updated with authentication and user management.');

@@ -3,7 +3,6 @@ import axios from 'axios'
 import { Settings, Pin, Star, Search, X } from 'lucide-react'
 import debounce from 'lodash.debounce';
 
-
 // Assuming you've set up a proxy in package.json or using environment variables
 const API_BASE_URL = 'http://7websites.com/api'
 
@@ -37,6 +36,73 @@ function Card({ children, ...props }) {
   return <div className="bg-white shadow-md rounded-lg overflow-hidden" {...props}>{children}</div>
 }
 
+function Login({ onLogin }) {
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      const response = await axios.post(`${API_BASE_URL}/login`, { username, password })
+      onLogin(response.data)
+    } catch (error) {
+      setError('Invalid username or password')
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Sign in to TopGlanz Hannover CRM
+          </h2>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <Input
+                id="username"
+                name="username"
+                type="text"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+            <div>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+
+          <div>
+            <Button
+              type="submit"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Sign in
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [customers, setCustomers] = useState([])
   const [selectedCustomer, setSelectedCustomer] = useState(null)
@@ -61,16 +127,21 @@ function App() {
     showKPIs: true,
   })
   const [showHelpDialog, setShowHelpDialog] = useState(false)
+  const [user, setUser] = useState(null)
 
   const stages = ['new', 'engaged', 'ordered', 'closed lost']
 
   useEffect(() => {
-    fetchCustomers()
-  }, [activeSection])
+    if (user) {
+      fetchCustomers()
+    }
+  }, [user, activeSection])
 
   const fetchCustomers = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/customers`)
+      const response = await axios.get(`${API_BASE_URL}/customers`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      })
       console.log("see customer", response.data)
       setCustomers(response.data)
     } catch (error) {
@@ -81,7 +152,9 @@ function App() {
   const addCustomer = async () => {
     if (newCustomer.name.trim()) {
       try {
-        const response = await axios.post(`${API_BASE_URL}/customers`, newCustomer)
+        const response = await axios.post(`${API_BASE_URL}/customers`, newCustomer, {
+          headers: { Authorization: `Bearer ${user.token}` }
+        })
         setCustomers([...customers, response.data])
         setNewCustomer({ name: '', phone: '', email: '', stage: 'new' })
       } catch (error) {
@@ -90,55 +163,13 @@ function App() {
     }
   }
 
-  // const debouncedUpdateCustomer = debounce(async (updatedCustomer) => {
-  //   try {
-  //     const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer);
-  //     setCustomers(customers.map(c => (c._id === response.data._id ? response.data : c)));
-  //     setSelectedCustomer(response.data);
-  //   } catch (error) {
-  //     console.error('Error updating customer:', error);
-  //   }
-  // }, 750);
-
-  // const debouncedUpdateCustomer = useCallback(
-  //   debounce(async (updatedCustomer) => {
-  //     try {
-  //       const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer);
-  //       setCustomers(customers.map(c => (c._id === response.data._id ? response.data : c)));
-  //       setSelectedCustomer(response.data);
-  //     } catch (error) {
-  //       console.error('Error updating customer:', error);
-  //     }
-  //   }, 750), // Adjust delay to 750 ms (or another suitable duration)
-  //   [customers] // Dependencies
-  // );
-
-
-  // const debouncedUpdateCustomer = useCallback(
-  //   debounce(async (updatedCustomer) => {
-  //     try {
-  //       const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer);
-
-  //       // Update state without directly depending on `customers`
-  //       setCustomers(prevCustomers =>
-  //         prevCustomers.map(c => (c._id === response.data._id ? response.data : c))
-  //       );
-  //       setSelectedCustomer(response.data);
-  //     } catch (error) {
-  //       console.error('Error updating customer:', error);
-  //     }
-  //   }, 750), // Adjust delay to 750 ms (or another suitable duration)
-  //   [] // Empty dependency array since we handle state updates internally
-  // );
-
-
-
-
   const debouncedUpdateCustomerFunc = useMemo(
     () =>
       debounce(async (updatedCustomer, setCustomers, setSelectedCustomer) => {
         try {
-          const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer);
+          const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer, {
+            headers: { Authorization: `Bearer ${user.token}` }
+          });
 
           // Update state with the response
           setCustomers(prevCustomers =>
@@ -149,19 +180,15 @@ function App() {
           console.error('Error updating customer:', error);
         }
       }, 750),
-    [] // Empty dependency array to ensure memoization
+    [user] // Dependency array includes user to ensure the token is always current
   );
 
   const debouncedUpdateCustomer = useCallback(
     (updatedCustomer) => {
       debouncedUpdateCustomerFunc(updatedCustomer, setCustomers, setSelectedCustomer);
     },
-    [debouncedUpdateCustomerFunc, setCustomers, setSelectedCustomer] // Dependency array
+    [debouncedUpdateCustomerFunc, setCustomers, setSelectedCustomer]
   );
-
-
-
-
 
   const handleChange = (field, value) => {
     const updatedCustomer = { ...selectedCustomer, [field]: value };
@@ -169,26 +196,19 @@ function App() {
     debouncedUpdateCustomer(updatedCustomer);  // Trigger debounced API update
   };
 
-
-  // const updateCustomer = async (updatedCustomer) => {
-  //   try {
-  //     const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer)
-  //     setCustomers(customers.map(c => c._id === response.data._id ? response.data : c))
-  //     setSelectedCustomer(response.data)
-  //   } catch (error) {
-  //     console.error('Error updating customer:', error)
-  //   }
-  // }
-
   const updateCustomer = async (updatedCustomer) => {
     try {
       // First, check if the customer still exists
-      const checkResponse = await axios.get(`${API_BASE_URL}/customers/${updatedCustomer._id}`)
+      const checkResponse = await axios.get(`${API_BASE_URL}/customers/${updatedCustomer._id}`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      })
       if (!checkResponse.data) {
         throw new Error('Customer not found')
       }
 
-      const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer)
+      const response = await axios.put(`${API_BASE_URL}/customers/${updatedCustomer._id}`, updatedCustomer, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      })
       setCustomers(customers.map(c => c._id === response.data._id ? response.data : c))
       setSelectedCustomer(response.data)
       // toast.success('Customer updated successfully!')
@@ -206,137 +226,80 @@ function App() {
     }
   }
 
+  const addNote = async () => {
+    if (selectedCustomer && newNote.content.trim()) {
+      try {
+        const response = await axios.put(`${API_BASE_URL}/customers/${selectedCustomer._id}/notes`, {
+          ...newNote,
+          timestamp: new Date().toISOString(),
+          isPinned: false,
+          isHighlighted: false,
+        }, {
+          headers: { Authorization: `Bearer ${user.token}` }
+        });
 
-  // const deleteCustomer = async (id) => {
-  //   try {
-  //     await axios.delete(`${API_BASE_URL}/customers/${id}`)
-  //     setCustomers(customers.filter(c => c._id !== id))
-  //     setSelectedCustomer(null)
-  //     setAdminPassword('')
-  //     setActiveSection('customers')
-  //   } catch (error) {
-  //     console.error('Error deleting customer:', error)
-  //   }
-  // }
+        // Update selectedCustomer with new note without reload
+        const updatedCustomer = {
+          ...selectedCustomer,
+          notes: [...selectedCustomer.notes, response.data],
+          contacts: selectedCustomer.contacts + 1,
+          touchpoints: selectedCustomer.touchpoints + 1,
+          stage: selectedCustomer.stage === 'new' ? 'engaged' : selectedCustomer.stage,
+        };
 
-  // const addNote = async () => {
-  //   if (selectedCustomer && newNote.content.trim()) {
-  //     try {
-  //       const response = await axios.post(`${API_BASE_URL}/notes`, {
-  //         ...newNote,
-  //         customerId: selectedCustomer._id,
-  //         timestamp: new Date().toISOString(),
-  //         isPinned: false,
-  //         isHighlighted: false
-  //       })
-  //       const updatedCustomer = {
-  //         ...selectedCustomer,
-  //         notes: [...selectedCustomer.notes, response.data],
-  //         contacts: selectedCustomer.contacts + 1,
-  //         touchpoints: selectedCustomer.touchpoints + 1,
-  //         stage: selectedCustomer.stage === 'new' ? 'engaged' : selectedCustomer.stage
-  //       }
-  //       await updateCustomer(updatedCustomer)
-  //       setNewNote({ type: 'call', content: '', salesAgent: '' })
-  //     } catch (error) {
-  //       console.error('Error adding note:', error)
-  //     }
-  //   }
-  // }
-
- // Function to add a note without page reload
-const addNote = async () => {
-  if (selectedCustomer && newNote.content.trim()) {
-    try {
-      const response = await axios.put(`${API_BASE_URL}/customers/${selectedCustomer._id}/notes`, {
-        ...newNote,
-        timestamp: new Date().toISOString(),
-        isPinned: false,
-        isHighlighted: false,
-      });
-
-      // Update selectedCustomer with new note without reload
-      const updatedCustomer = {
-        ...selectedCustomer,
-        notes: [...selectedCustomer.notes, response.data],
-        contacts: selectedCustomer.contacts + 1,
-        touchpoints: selectedCustomer.touchpoints + 1,
-        stage: selectedCustomer.stage === 'new' ? 'engaged' : selectedCustomer.stage,
-      };
-
-      setSelectedCustomer(updatedCustomer);
-      setNewNote({ type: 'call', content: '', salesAgent: '' });
-    } catch (error) {
-      console.error('Error adding note:', error);
+        setSelectedCustomer(updatedCustomer);
+        setNewNote({ type: 'call', content: '', salesAgent: '' });
+      } catch (error) {
+        console.error('Error adding note:', error);
+      }
     }
-  }
-};
+  };
 
-// Function to toggle the "isPinned" status of a note without reload
-const toggleNotePinned = async (noteId) => {
-  if (selectedCustomer) {
-    try {
-      const note = selectedCustomer.notes.find(n => n._id === noteId);
-      const response = await axios.put(`${API_BASE_URL}/notes/${noteId}`, {
-        ...note,
-        isPinned: !note.isPinned,
-      });
+  const toggleNotePinned = async (noteId) => {
+    if (selectedCustomer) {
+      try {
+        const note = selectedCustomer.notes.find(n => n._id === noteId);
+        const response = await axios.put(`${API_BASE_URL}/notes/${noteId}`, {
+          ...note,
+          isPinned: !note.isPinned,
+        }, {
+          headers: { Authorization: `Bearer ${user.token}` }
+        });
 
-      // Update the note within selectedCustomer without reload
-      const updatedNotes = selectedCustomer.notes.map(n =>
-        n._id === noteId ? response.data : n
-      );
-      const updatedCustomer = { ...selectedCustomer, notes: updatedNotes };
-      setSelectedCustomer(updatedCustomer);
-    } catch (error) {
-      console.error('Error toggling note pin:', error);
+        // Update the note within selectedCustomer without reload
+        const updatedNotes = selectedCustomer.notes.map(n =>
+          n._id === noteId ? response.data : n
+        );
+        const updatedCustomer = { ...selectedCustomer, notes: updatedNotes };
+        setSelectedCustomer(updatedCustomer);
+      } catch (error) {
+        console.error('Error toggling note pin:', error);
+      }
     }
-  }
-};
+  };
 
-// Function to toggle the "isHighlighted" status of a note without reload
-const toggleNoteHighlighted = async (noteId) => {
-  if (selectedCustomer) {
-    try {
-      const note = selectedCustomer.notes.find(n => n._id === noteId);
-      const response = await axios.put(`${API_BASE_URL}/notes/${noteId}`, {
-        ...note,
-        isHighlighted: !note.isHighlighted,
-      });
+  const toggleNoteHighlighted = async (noteId) => {
+    if (selectedCustomer) {
+      try {
+        const note = selectedCustomer.notes.find(n => n._id === noteId);
+        const response = await axios.put(`${API_BASE_URL}/notes/${noteId}`, {
+          ...note,
+          isHighlighted: !note.isHighlighted,
+        }, {
+          headers: { Authorization: `Bearer ${user.token}` }
+        });
 
-      // Update the note within selectedCustomer without reload
-      const updatedNotes = selectedCustomer.notes.map(n =>
-        n._id === noteId ? response.data : n
-      );
-      const updatedCustomer = { ...selectedCustomer, notes: updatedNotes };
-      setSelectedCustomer(updatedCustomer);
-    } catch (error) {
-      console.error('Error toggling note highlight:', error);
+        // Update the note within selectedCustomer without reload
+        const updatedNotes = selectedCustomer.notes.map(n =>
+          n._id === noteId ? response.data : n
+        );
+        const updatedCustomer = { ...selectedCustomer, notes: updatedNotes };
+        setSelectedCustomer(updatedCustomer);
+      } catch (error) {
+        console.error('Error toggling note highlight:', error);
+      }
     }
-  }
-};
-
-  // const addOrder = async () => {
-  //   if (selectedCustomer && newOrder.amount > 0) {
-  //     try {
-  //       const response = await axios.post(`${API_BASE_URL}/orders`, {
-  //         ...newOrder,
-  //         customerId: selectedCustomer._id,
-  //         date: new Date().toISOString()
-  //       })
-  //       const updatedCustomer = {
-  //         ...selectedCustomer,
-  //         orders: [...selectedCustomer.orders, response.data],
-  //         totalRevenue: selectedCustomer.totalRevenue + newOrder.amount,
-  //         stage: 'ordered'
-  //       }
-  //       await updateCustomer(updatedCustomer)
-  //       setNewOrder({ amount: 0, description: '' })
-  //     } catch (error) {
-  //       console.error('Error adding order:', error)
-  //     }
-  //   }
-  // }
+  };
 
   const addOrder = async () => {
     if (selectedCustomer && newOrder.amount > 0) {
@@ -345,6 +308,8 @@ const toggleNoteHighlighted = async (noteId) => {
         const response = await axios.put(`${API_BASE_URL}/customers/${selectedCustomer._id}/orders`, {
           ...newOrder,
           date: new Date().toISOString(),
+        }, {
+          headers: { Authorization: `Bearer ${user.token}` }
         });
 
         // Update the selectedCustomer state with the new order locally after the API call
@@ -363,11 +328,12 @@ const toggleNoteHighlighted = async (noteId) => {
     }
   };
 
-
   const deleteOrder = async (orderId) => {
     if (selectedCustomer) {
       try {
-        await axios.delete(`${API_BASE_URL}/orders/${orderId}`)
+        await axios.delete(`${API_BASE_URL}/orders/${orderId}`, {
+          headers: { Authorization: `Bearer ${user.token}` }
+        })
         const orderToDelete = selectedCustomer.orders.find(order => order._id === orderId)
         const updatedCustomer = {
           ...selectedCustomer,
@@ -384,11 +350,14 @@ const toggleNoteHighlighted = async (noteId) => {
   const updateOrder = async (updatedOrder) => {
     if (selectedCustomer) {
       try {
-        const response = await axios.put(`${API_BASE_URL}/orders/${updatedOrder._id}`, updatedOrder)
+        const response = await axios.put(`${API_BASE_URL}/orders/${updatedOrder._id}`, updatedOrder, {
+          headers: { Authorization: `Bearer ${user.token}` }
+        })
         const oldOrder = selectedCustomer.orders.find(order => order._id === updatedOrder._id)
         const updatedCustomer = {
           ...selectedCustomer,
-          orders: selectedCustomer.orders.map(order => order._id === updatedOrder._id ? response.data : order),
+          orders: selectedCustomer.orders.map(order =>
+            order._id === updatedOrder._id ? response.data : order),
           totalRevenue: selectedCustomer.totalRevenue - oldOrder.amount + updatedOrder.amount
         }
         await updateCustomer(updatedCustomer)
@@ -503,24 +472,6 @@ const toggleNoteHighlighted = async (noteId) => {
         </button>
       </div>
 
-
-      {/* <div className="relative">
-        <Input
-          placeholder="Search customers..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-        <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery('')}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2"
-          >
-            <X className="w-5 h-5 text-gray-400" />
-          </button>
-        )}
-      </div> */}
       <div className="relative">
         <Input
           placeholder="Search customers..."
@@ -549,16 +500,6 @@ const toggleNoteHighlighted = async (noteId) => {
               setActiveSection('details')
             }}
           >
-
-            {/* <Select
-              value={newCustomer.stage}
-              onChange={(e) => setNewCustomer({ ...newCustomer, stage: e.target.value })}
-            >
-              {stages.map(stage => (
-                <option key={stage} value={stage}>{stage}</option>
-              ))}
-            </Select> */}
-
             <div className="p-4">
               <h3 className="text-lg font-semibold">{customer.name}</h3>
               <p className="text-sm text-gray-600">{customer.email}</p>
@@ -593,12 +534,6 @@ const toggleNoteHighlighted = async (noteId) => {
               onChange={(e) => handleChange('name', e.target.value)}
               placeholder="Name"
             />
-
-            {/* <Input
-              value={selectedCustomer.name}
-              onChange={(e) => updateCustomer({ ...selectedCustomer, name: e.target.value })}
-              placeholder="Name"
-            /> */}
             <Input
               value={selectedCustomer.phone}
               onChange={(e) => handleChange('phone', e.target.value)}
@@ -646,9 +581,6 @@ const toggleNoteHighlighted = async (noteId) => {
               />
             )}
           </div>
-          {/* <div className="flex justify-end">
-            <Button variant="danger" onClick={() => setShowAdminDialog(true)}>Delete Customer</Button>
-          </div> */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <div className="p-4">
@@ -759,107 +691,234 @@ const toggleNoteHighlighted = async (noteId) => {
         <Select id="kpi-filter" value={kpiFilter} onChange={(e) => setKpiFilter(e.target.value)}>
           <option value="all">All Customers</option>
           {customers?.map(customer => (
-            <option key={customer._id} value={customer._id.toString()}>{customer.name}</option>
+            <option key={customer._id} value={customer._id}>{customer.name}</option>
           ))}
         </Select>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <div className="p-4">
-            <h3 className="text-lg font-semibold">Customer Lifetime Value (CLV)</h3>
-            <p className="text-2xl font-bold mt-2">€{kpis.clv.toFixed(2)}</p>
+            <h3 className="text-lg font-semibold mb-2">Customer Lifetime Value</h3>
+            <p className="text-2xl font-bold">€{kpis.clv.toFixed(2)}</p>
           </div>
         </Card>
         <Card>
           <div className="p-4">
-            <h3 className="text-lg font-semibold">Conversion Rate</h3>
-            <p className="text-2xl font-bold mt-2">{kpis.conversionRate.toFixed(2)}%</p>
+            <h3 className="text-lg font-semibold mb-2">Conversion Rate</h3>
+            <p className="text-2xl font-bold">{kpis.conversionRate.toFixed(2)}%</p>
           </div>
         </Card>
         <Card>
           <div className="p-4">
-            <h3 className="text-lg font-semibold">Average Touchpoints</h3>
-            <p className="text-2xl font-bold mt-2">{kpis.averageTouchpoints.toFixed(2)}</p>
+            <h3 className="text-lg font-semibold mb-2">Average Touchpoints</h3>
+            <p className="text-2xl font-bold">{kpis.averageTouchpoints.toFixed(2)}</p>
           </div>
         </Card>
         <Card>
           <div className="p-4">
-            <h3 className="text-lg font-semibold">Activity per Sales Agent</h3>
-            <div className="mt-2">
-              {Object.entries(kpis.activityPerSalesAgent).map(([agent, activity]) => (
-                <p key={agent}>{agent}: {activity} activities</p>
-              ))}
-            </div>
+            <h3 className="text-lg font-semibold mb-2">Revenue per Touchpoint</h3>
+            <p className="text-2xl font-bold">€{kpis.revenuePerTouchpoint.toFixed(2)}</p>
           </div>
         </Card>
         <Card>
           <div className="p-4">
-            <h3 className="text-lg font-semibold">Revenue per Touchpoint</h3>
-            <p className="text-2xl font-bold mt-2">€{kpis.revenuePerTouchpoint.toFixed(2)}</p>
+            <h3 className="text-lg font-semibold mb-2">Activity per Sales Agent</h3>
+            {Object.entries(kpis.activityPerSalesAgent).map(([agent, activity]) => (
+              <div key={agent} className="flex justify-between">
+                <span>{agent}:</span>
+                <span>{activity}</span>
+              </div>
+            ))}
           </div>
         </Card>
       </div>
     </div>
   )
 
-  const renderAdminSettings = () => (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold">Admin Settings</h2>
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label htmlFor="showTotalRevenue" className="text-sm font-medium text-gray-700">Show Total Revenue</label>
-          <input
-            type="checkbox"
-            id="showTotalRevenue"
-            checked={adminSettings?.showTotalRevenue}
-            onChange={(e) => setAdminSettings(prev => ({ ...prev, showTotalRevenue: e.target.checked }))}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <label htmlFor="showCustomerStage" className="text-sm font-medium text-gray-700">Show Customer Stage</label>
-          <input
-            type="checkbox"
-            id="showCustomerStage"
-            checked={adminSettings?.showCustomerStage}
-            onChange={(e) => setAdminSettings(prev => ({ ...prev, showCustomerStage: e.target.checked }))}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <label htmlFor="showTouchpoints" className="text-sm font-medium text-gray-700">Show Touchpoints</label>
-          <input
-            type="checkbox"
-            id="showTouchpoints"
-            checked={adminSettings?.showTouchpoints}
-            onChange={(e) => setAdminSettings(prev => ({ ...prev, showTouchpoints: e.target.checked }))}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <label htmlFor="showKPIs" className="text-sm font-medium text-gray-700">Show KPIs</label>
-          <input
-            type="checkbox"
-            id="showKPIs"
-            checked={adminSettings?.showKPIs}
-            onChange={(e) => setAdminSettings(prev => ({ ...prev, showKPIs: e.target.checked }))}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
+  const renderAdminDialog = () => (
+    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ${showAdminDialog ? '' : 'hidden'}`}>
+      <div className="bg-white p-6 rounded-lg">
+        <h2 className="text-xl font-bold mb-4">Admin Login</h2>
+        <Input
+          type="password"
+          placeholder="Enter admin password"
+          value={adminPassword}
+          onChange={(e) => setAdminPassword(e.target.value)}
+          className="mb-4"
+        />
+        <div className="flex justify-end space-x-2">
+          <Button onClick={handleAdminLogin}>Login</Button>
+          <Button variant="secondary" onClick={() => setShowAdminDialog(false)}>Cancel</Button>
         </div>
       </div>
     </div>
   )
+
+  const renderAdminPortal = () => (
+    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ${isAdminPortalOpen ? '' : 'hidden'}`}>
+      <div className="bg-white p-6 rounded-lg w-96">
+        <h2 className="text-xl font-bold mb-4">Admin Settings</h2>
+        <div className="space-y-4">
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={adminSettings.showTotalRevenue}
+              onChange={(e) => setAdminSettings({ ...adminSettings, showTotalRevenue: e.target.checked })}
+            />
+            <span>Show Total Revenue</span>
+          </label>
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={adminSettings.showCustomerStage}
+              onChange={(e) => setAdminSettings({ ...adminSettings, showCustomerStage: e.target.checked })}
+            />
+            <span>Show Customer Stage</span>
+          </label>
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={adminSettings.showTouchpoints}
+              onChange={(e) => setAdminSettings({ ...adminSettings, showTouchpoints: e.target.checked })}
+            />
+            <span>Show Touchpoints</span>
+          </label>
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={adminSettings.showKPIs}
+              onChange={(e) => setAdminSettings({ ...adminSettings, showKPIs: e.target.checked })}
+            />
+            <span>Show KPIs</span>
+          </label>
+        </div>
+        <div className="mt-6 flex justify-end space-x-2">
+          <Button onClick={handleAdminLogout}>Logout</Button>
+          <Button variant="secondary" onClick={() => setIsAdminPortalOpen(false)}>Close</Button>
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderStageChangeDialog = () => (
+    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ${showStageChangeDialog ? '' : 'hidden'}`}>
+      <div className="bg-white p-6 rounded-lg">
+        <h2 className="text-xl font-bold mb-4">Confirm Stage Change</h2>
+        <p className="mb-4">Are you sure you want to change the stage from {selectedCustomer?.stage} to {newStage}?</p>
+        <Input
+          type="password"
+          placeholder="Enter admin password"
+          value={stageChangePassword}
+          onChange={(e) => setStageChangePassword(e.target.value)}
+          className="mb-4"
+        />
+        <div className="flex justify-end space-x-2">
+          <Button onClick={() => {
+            if (stageChangePassword === 'GULFSTREAM') {
+              updateCustomer({ ...selectedCustomer, stage: newStage })
+              setShowStageChangeDialog(false)
+              setStageChangePassword('')
+            } else {
+              alert('Incorrect password')
+            }
+          }}>Confirm</Button>
+          <Button variant="secondary" onClick={() => {
+            setShowStageChangeDialog(false)
+            setStageChangePassword('')
+          }}>Cancel</Button>
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderHelpDialog = () => (
+    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ${showHelpDialog ? '' : 'hidden'}`}>
+      <div className="bg-white p-6 rounded-lg max-w-2xl max-h-[80vh] overflow-y-auto">
+        <h2 className="text-2xl font-bold mb-4">Help & Information</h2>
+        <div className="space-y-4">
+          <section>
+            <h3 className="text-xl font-semibold mb-2">Customer Management</h3>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Add new customers using the form at the top of the customer list.</li>
+              <li>Search for customers using the search bar.</li>
+              <li>Click on a customer card to view and edit their details.</li>
+            </ul>
+          </section>
+          <section>
+            <h3 className="text-xl font-semibold mb-2">Customer Details</h3>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Edit customer information directly in the input fields.</li>
+              <li>Add notes and orders using the respective forms.</li>
+              <li>Pin or highlight important notes for quick reference.</li>
+            </ul>
+          </section>
+          <section>
+            <h3 className="text-xl font-semibold mb-2">Admin Features</h3>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Access admin settings by clicking the gear icon and entering the password.</li>
+              <li>Toggle visibility of total revenue, customer stage, and touchpoints.</li>
+              <li>View and analyze KPIs for individual customers or all customers.</li>
+            </ul>
+          </section>
+          <section>
+            <h3 className="text-xl font-semibold mb-2">Tips</h3>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Regularly update customer information to maintain accurate records.</li>
+              <li>Use the notes feature to keep track of all customer interactions.</li>
+              <li>Monitor KPIs to identify trends and improve your sales process.</li>
+            </ul>
+          </section>
+        </div>
+        <div className="mt-6 flex justify-end">
+          <Button onClick={() => setShowHelpDialog(false)}>Close</Button>
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderEditOrderDialog = () => (
+    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ${editingOrder ? '' : 'hidden'}`}>
+      <div className="bg-white p-6 rounded-lg">
+        <h2 className="text-xl font-bold mb-4">Edit Order</h2>
+        {editingOrder && (
+          <>
+            <Input
+              type="number"
+              value={editingOrder.amount}
+              onChange={(e) => setEditingOrder({ ...editingOrder, amount: parseFloat(e.target.value) || 0 })}
+              className="mb-2"
+            />
+            <Input
+              value={editingOrder.description}
+              onChange={(e) => setEditingOrder({ ...editingOrder, description: e.target.value })}
+              className="mb-2"
+            />
+            <div className="flex justify-end space-x-2">
+              <Button onClick={() => updateOrder(editingOrder)}>Save</Button>
+              <Button variant="secondary" onClick={() => setEditingOrder(null)}>Cancel</Button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+  };
+
+  if (!user) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <header className="bg-black shadow-md">
-        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center text-white">
-          {/* App Title */}
-          <h1 onClick={e => setActiveSection('customers')} className="text-3xl font-bold text-white cursor-pointer">TopGlanz Hannover CRM</h1>
-
-          {/* Settings Button and Section Selector */}
+      <header className="bg-gray-800 text-white p-4">
+        <div className="container mx-auto flex justify-between items-center">
+          <h1 onClick={() => setActiveSection('customers')} className="text-3xl font-bold cursor-pointer">
+            TopGlanz Hannover CRM
+          </h1>
           <div className="flex items-center space-x-6">
-            {/* Settings Button with Icon */}
             <div className="relative">
               <Button
                 variant="secondary"
@@ -873,228 +932,30 @@ const toggleNoteHighlighted = async (noteId) => {
                 <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-black bg-green-400" />
               )}
             </div>
-
-            {/* Section Selector Dropdown */}
             <Select
               value={activeSection}
               onChange={(e) => setActiveSection(e.target.value)}
               className="bg-gray-700 text-white text-sm px-3 py-2 rounded-md border border-gray-500 focus:outline-none"
             >
               <option value="customers">Customers</option>
-              {/* <option value="details">Customer Details</option> */}
               {adminSettings.showKPIs && <option value="kpis">KPIs</option>}
             </Select>
+            <Button variant="secondary" onClick={() => setShowHelpDialog(true)}>Help</Button>
           </div>
         </div>
       </header>
       <main>
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="container mx-auto py-8">
           {activeSection === 'customers' && renderCustomers()}
           {activeSection === 'details' && renderCustomerDetails()}
-          {activeSection === 'kpis' && adminSettings.showKPIs && renderKPIs()}
+          {activeSection === 'kpis' && renderKPIs()}
         </div>
       </main>
-
-      {/* Admin Login Dialog */}
-      {showAdminDialog && (
-        <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                      Admin Login
-                    </h3>
-                    <div className="mt-2">
-                      <Input
-                        type="password"
-                        placeholder="Enter admin password"
-                        value={adminPassword}
-                        onChange={(e) => setAdminPassword(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <Button onClick={handleAdminLogin}>
-                  Login
-                </Button>
-                <Button variant="secondary" onClick={() => setShowAdminDialog(false)} className="mr-2">
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Admin Portal */}
-      {isAdminPortalOpen && (
-        <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                      Admin Portal
-                    </h3>
-                    <div className="mt-2">
-                      {renderAdminSettings()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <Button onClick={handleAdminLogout}>
-                  Logout
-                </Button>
-                <Button variant="secondary" onClick={() => setIsAdminPortalOpen(false)} className="mr-2">
-                  Close
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Stage Change Dialog */}
-      {showStageChangeDialog && (
-        <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                      Confirm Stage Change
-                    </h3>
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500">
-                        Are you sure you want to change the stage to {newStage}? This action requires admin approval.
-                      </p>
-                      <Input
-                        type="password"
-                        placeholder="Enter admin password"
-                        value={stageChangePassword}
-                        onChange={(e) => setStageChangePassword(e.target.value)}
-                        className="mt-2"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <Button onClick={() => {
-                  if (stageChangePassword === 'GULFSTREAM') {
-                    updateCustomer({ ...selectedCustomer, stage: newStage });
-                    setShowStageChangeDialog(false);
-                    setStageChangePassword('');
-                  } else {
-                    alert('Incorrect password');
-                  }
-                }}>
-                  Confirm
-                </Button>
-                <Button variant="secondary" onClick={() => setShowStageChangeDialog(false)} className="mr-2">
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Order Dialog */}
-      {editingOrder && (
-        <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                      Edit Order
-                    </h3>
-                    <div className="mt-2 space-y-4">
-                      <Input
-                        type="number"
-                        placeholder="Amount (€)"
-                        value={editingOrder.amount}
-                        onChange={(e) => setEditingOrder({ ...editingOrder, amount: parseFloat(e.target.value) || 0 })}
-                      />
-                      <Input
-                        placeholder="Description"
-                        value={editingOrder.description}
-                        onChange={(e) => setEditingOrder({ ...editingOrder, description: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <Button onClick={() => updateOrder(editingOrder)}>
-                  Save Changes
-                </Button>
-                <Button variant="secondary" onClick={() => setEditingOrder(null)} className="mr-2">
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Help Dialog */}
-      {showHelpDialog && (
-        <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                      Help & Information
-                    </h3>
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500">
-                        Welcome to the TopGlanz Hannover CRM system. Here are some key features:
-                      </p>
-                      <ul className="list-disc list-inside mt-2 text-sm text-gray-500">
-                        <li>Add and manage customers</li>
-                        <li>Track customer interactions with notes</li>
-                        <li>Record customer orders</li>
-                        <li>View important KPIs</li>
-                        <li>Admin features for advanced management</li>
-                      </ul>
-                      <p className="mt-2 text-sm text-gray-500">
-                        For more detailed information or support, please contact your system administrator.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <Button variant="secondary" onClick={() => setShowHelpDialog(false)}>
-                  Close
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {renderAdminDialog()}
+      {renderAdminPortal()}
+      {renderStageChangeDialog()}
+      {renderHelpDialog()}
+      {renderEditOrderDialog()}
     </div>
   )
 }
