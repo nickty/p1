@@ -270,6 +270,29 @@ app.put('/api/notes/:id', verifyToken, async (req, res) => {
   }
 });
 
+// Fetch all pinned notes
+app.get('/api/notes/pinned', verifyToken, async (req, res) => {
+  try {
+    const pinnedNotes = await Note.find({ isPinned: true }).populate('customerId', 'name');
+    
+    const formattedPinnedNotes = pinnedNotes.map(note => ({
+      _id: note._id,
+      content: note.content,
+      type: note.type,
+      timestamp: note.timestamp,
+      salesAgent: note.salesAgent,
+      isPinned: note.isPinned,
+      isHighlighted: note.isHighlighted,
+      customerName: note.customerId ? note.customerId.name : 'Unknown Customer'
+    }));
+
+    res.json(formattedPinnedNotes);
+  } catch (error) {
+    console.error('Error fetching pinned notes:', error);
+    res.status(500).json({ message: 'Error fetching pinned notes' });
+  }
+});
+
 app.use(express.static(path.join(__dirname, 'client/build')));
 
 app.get('*', (req, res) => {

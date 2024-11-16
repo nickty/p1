@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import axios from 'axios'
-import { Settings, Pin, Star, Search, X } from 'lucide-react'
+import { Settings, Pin, Star, Search, X, LogOut } from 'lucide-react'
 import debounce from 'lodash.debounce';
 
 // Assuming you've set up a proxy in package.json or using environment variables
@@ -130,6 +130,20 @@ function App() {
   const [user, setUser] = useState(null)
 
   const stages = ['new', 'engaged', 'ordered', 'closed lost']
+
+  const [pinnedNotes, setPinnedNotes] = useState([])
+  const [pinnedNotesError, setPinnedNotesError] = useState(null)
+
+  const handleLogout = () => {
+    // Remove the token (assuming it's stored in localStorage)
+    localStorage.removeItem('userToken')
+    // Reset the user state
+    setUser(null)
+    // Reset any other necessary state
+    setActiveSection('customers')
+    setIsAdminMode(false)
+    setIsAdminPortalOpen(false)
+  }
   
 
 // Define fetchCustomers using useCallback
@@ -145,12 +159,30 @@ const fetchCustomers = useCallback(async () => {
   }
 }, [user]); // Add 'user' as a dependency because it is used inside the function
 
+const fetchPinnedNotes = useCallback( async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/notes/pinned`, {
+      headers: { Authorization: `Bearer ${user.token}` }
+    })
+    if (Array.isArray(response.data)) {
+      setPinnedNotes(response.data)
+    } else {
+      console.error('Unexpected data format for pinned notes:', response.data)
+      setPinnedNotesError('Unexpected data format for pinned notes')
+    }
+  } catch (error) {
+    console.error('Error fetching pinned notes:', error)
+    setPinnedNotesError('Failed to fetch pinned notes')
+  }
+}, [user])
+
 // UseEffect hook that runs fetchCustomers
 useEffect(() => {
   if (user) {
     fetchCustomers();
+    fetchPinnedNotes()
   }
-}, [user, activeSection, fetchCustomers]);
+}, [user, activeSection, fetchCustomers, fetchPinnedNotes]);
 
 
   const addCustomer = async () => {
@@ -281,6 +313,37 @@ useEffect(() => {
       }
     }
   };
+
+  const renderPinnedNotes = () => (
+    <div className="mt-8">
+    <h2 className="text-2xl font-bold mb-4">Pinned Notes</h2>
+    {pinnedNotesError ? (
+      <p className="text-red-500">{pinnedNotesError}</p>
+    ) : pinnedNotes.length === 0 ? (
+      <p>No pinned notes found.</p>
+    ) : (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {pinnedNotes.map(note => (
+          <Card key={note._id} className="p-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-medium">{note.customerName || 'Unknown Customer'}</span>
+              <div className="flex space-x-2">
+                <Pin className="w-4 h-4 text-blue-500" />
+                {note.isHighlighted && <Star className="w-4 h-4 text-yellow-500" />}
+              </div>
+            </div>
+            <p className="text-sm mb-2">{note.content}</p>
+            <div className="text-xs text-gray-500">
+              <span>{note.salesAgent}</span>
+              <span className="mx-1">•</span>
+              <span>{new Date(note.timestamp).toLocaleString()}</span>
+            </div>
+          </Card>
+        ))}
+      </div>
+    )}
+  </div>
+  )
 
   const toggleNoteHighlighted = async (noteId) => {
     if (selectedCustomer) {
@@ -518,6 +581,7 @@ useEffect(() => {
           </Card>
         ))}
       </div>
+      {renderPinnedNotes()}
     </div>
   )
 
@@ -945,6 +1009,14 @@ useEffect(() => {
               {adminSettings.showKPIs && <option value="kpis">KPIs</option>}
             </Select>
             <Button variant="secondary" onClick={() => setShowHelpDialog(true)}>Help</Button>
+            <Button
+              variant="secondary"
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center"
+            >
+              <LogOut className="w-5 h-5 mr-2" />
+              <span>Logout</span>
+            </Button>
           </div>
         </div>
       </header>
@@ -953,6 +1025,7 @@ useEffect(() => {
           {activeSection === 'customers' && renderCustomers()}
           {activeSection === 'details' && renderCustomerDetails()}
           {activeSection === 'kpis' && renderKPIs()}
+         
         </div>
       </main>
       {renderAdminDialog()}
