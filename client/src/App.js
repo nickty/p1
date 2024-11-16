@@ -314,35 +314,50 @@ useEffect(() => {
     }
   };
 
+  // const handlePinnedNoteClick = (customerId) => {
+  //   console.log("check id", customerId);
+  //   const customer = customers.find(c => c._id === customerId)
+  //   if (customer) {
+  //     setSelectedCustomer(customer)
+  //     setActiveSection('details')
+  //   } else {
+  //     console.error('Customer not found for the pinned note')
+  //   }
+  // }
+
   const renderPinnedNotes = () => (
     <div className="mt-8">
-    <h2 className="text-2xl font-bold mb-4">Pinned Notes</h2>
-    {pinnedNotesError ? (
-      <p className="text-red-500">{pinnedNotesError}</p>
-    ) : pinnedNotes.length === 0 ? (
-      <p>No pinned notes found.</p>
-    ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {pinnedNotes.map(note => (
-          <Card key={note._id} className="p-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-medium">{note.customerName || 'Unknown Customer'}</span>
-              <div className="flex space-x-2">
-                <Pin className="w-4 h-4 text-blue-500" />
-                {note.isHighlighted && <Star className="w-4 h-4 text-yellow-500" />}
+      <h2 className="text-2xl font-bold mb-4">Pinned Notes</h2>
+      {pinnedNotesError ? (
+        <p className="text-red-500">{pinnedNotesError}</p>
+      ) : pinnedNotes.length === 0 ? (
+        <p>No pinned notes found.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {pinnedNotes.map(note => (
+            <Card 
+              key={note._id} 
+              className="p-4 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+              // onClick={() => handlePinnedNoteClick(note._id)}
+            >
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-medium">{note.customerName || 'Unknown Customer'}</span>
+                <div className="flex space-x-2">
+                  <Pin className="w-4 h-4 text-blue-500" />
+                  {note.isHighlighted && <Star className="w-4 h-4 text-yellow-500" />}
+                </div>
               </div>
-            </div>
-            <p className="text-sm mb-2">{note.content}</p>
-            <div className="text-xs text-gray-500">
-              <span>{note.salesAgent}</span>
-              <span className="mx-1">•</span>
-              <span>{new Date(note.timestamp).toLocaleString()}</span>
-            </div>
-          </Card>
-        ))}
-      </div>
-    )}
-  </div>
+              <p className="text-sm mb-2">{note.content}</p>
+              <div className="text-xs text-gray-500">
+                <span>{note.salesAgent}</span>
+                <span className="mx-1">•</span>
+                <span>{new Date(note.timestamp).toLocaleString()}</span>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
   )
 
   const toggleNoteHighlighted = async (noteId) => {
