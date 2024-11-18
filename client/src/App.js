@@ -144,45 +144,45 @@ function App() {
     setIsAdminMode(false)
     setIsAdminPortalOpen(false)
   }
-  
 
-// Define fetchCustomers using useCallback
-const fetchCustomers = useCallback(async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/customers`, {
-      headers: { Authorization: `Bearer ${user.token}` }
-    });
-    console.log("see customer", response.data);
-    setCustomers(response.data);
-  } catch (error) {
-    console.error('Error fetching customers:', error);
-  }
-}, [user]); // Add 'user' as a dependency because it is used inside the function
 
-const fetchPinnedNotes = useCallback( async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/notes/pinned`, {
-      headers: { Authorization: `Bearer ${user.token}` }
-    })
-    if (Array.isArray(response.data)) {
-      setPinnedNotes(response.data)
-    } else {
-      console.error('Unexpected data format for pinned notes:', response.data)
-      setPinnedNotesError('Unexpected data format for pinned notes')
+  // Define fetchCustomers using useCallback
+  const fetchCustomers = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/customers`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      console.log("see customer", response.data);
+      setCustomers(response.data);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
     }
-  } catch (error) {
-    console.error('Error fetching pinned notes:', error)
-    setPinnedNotesError('Failed to fetch pinned notes')
-  }
-}, [user])
+  }, [user]); // Add 'user' as a dependency because it is used inside the function
 
-// UseEffect hook that runs fetchCustomers
-useEffect(() => {
-  if (user) {
-    fetchCustomers();
-    fetchPinnedNotes()
-  }
-}, [user, activeSection, fetchCustomers, fetchPinnedNotes]);
+  const fetchPinnedNotes = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/notes/pinned`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      })
+      if (Array.isArray(response.data)) {
+        setPinnedNotes(response.data)
+      } else {
+        console.error('Unexpected data format for pinned notes:', response.data)
+        setPinnedNotesError('Unexpected data format for pinned notes')
+      }
+    } catch (error) {
+      console.error('Error fetching pinned notes:', error)
+      setPinnedNotesError('Failed to fetch pinned notes')
+    }
+  }, [user])
+
+  // UseEffect hook that runs fetchCustomers
+  useEffect(() => {
+    if (user) {
+      fetchCustomers();
+      fetchPinnedNotes()
+    }
+  }, [user, activeSection, fetchCustomers, fetchPinnedNotes]);
 
 
   const addCustomer = async () => {
@@ -335,10 +335,10 @@ useEffect(() => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {pinnedNotes.map(note => (
-            <Card 
-              key={note._id} 
+            <Card
+              key={note._id}
               className="p-4 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
-              // onClick={() => handlePinnedNoteClick(note._id)}
+            // onClick={() => handlePinnedNoteClick(note._id)}
             >
               <div className="flex justify-between items-center mb-2">
                 <span className="font-medium">{note.customerName || 'Unknown Customer'}</span>
@@ -450,15 +450,22 @@ useEffect(() => {
     }
   }
 
+  // const handleAdminLogin = () => {
+  //   if (adminPassword === 'GULFSTREAM') {
+  //     setIsAdminMode(true)
+  //     setAdminPassword('')
+  //     setShowAdminDialog(false)
+  //     setIsAdminPortalOpen(true)
+  //   } else {
+  //     alert('Incorrect password')
+  //   }
+  // }
+
   const handleAdminLogin = () => {
-    if (adminPassword === 'GULFSTREAM') {
+    
       setIsAdminMode(true)
-      setAdminPassword('')
-      setShowAdminDialog(false)
       setIsAdminPortalOpen(true)
-    } else {
-      alert('Incorrect password')
-    }
+   
   }
 
   const handleAdminLogout = () => {
@@ -627,7 +634,7 @@ useEffect(() => {
               onChange={(e) => handleChange('email', e.target.value)}
               placeholder="Email"
             />
-            {adminSettings.showCustomerStage && (
+            {/* {adminSettings.showCustomerStage && (
               <Select
                 value={selectedCustomer.stage}
                 onChange={(e) => {
@@ -636,6 +643,25 @@ useEffect(() => {
                   if (newIndex < currentIndex) {
                     setShowStageChangeDialog(true);
                     setNewStage(e.target.value);
+                  } else {
+                    updateCustomer({ ...selectedCustomer, stage: e.target.value });
+                  }
+                }}
+              >
+                {stages.map(stage => (
+                  <option key={stage} value={stage}>{stage}</option>
+                ))}
+              </Select>
+            )} */}
+
+            {adminSettings.showCustomerStage && (
+              <Select
+                value={selectedCustomer.stage}
+                onChange={(e) => {
+                  const currentIndex = stages.indexOf(selectedCustomer.stage);
+                  const newIndex = stages.indexOf(e.target.value);
+                  if (newIndex < currentIndex && user.user.role !== 'admin') {
+                    alert('Only admins can reverse customer stages.');
                   } else {
                     updateCustomer({ ...selectedCustomer, stage: e.target.value });
                   }
@@ -876,7 +902,7 @@ useEffect(() => {
           </label>
         </div>
         <div className="mt-6 flex justify-end space-x-2">
-          <Button onClick={handleAdminLogout}>Logout</Button>
+          {/* <Button onClick={handleAdminLogout}>Logout</Button> */}
           <Button variant="secondary" onClick={() => setIsAdminPortalOpen(false)}>Close</Button>
         </div>
       </div>
@@ -986,9 +1012,29 @@ useEffect(() => {
     </div>
   )
 
+  // const handleLogin = (userData) => {
+  //   setUser(userData);
+  // };
+
   const handleLogin = (userData) => {
-    setUser(userData);
-  };
+    setUser(userData)
+    localStorage.setItem('userToken', userData.token)
+    localStorage.setItem('userRole', userData.user.role)
+    if (userData.user.role === 'admin') {
+      setIsAdminMode(true)
+    }
+  }
+
+  useEffect(() => {
+    const token = localStorage.getItem('userToken')
+    const role = localStorage.getItem('userRole')
+    if (token && role) {
+      setUser({ token, user: { role } })
+      if (role === 'admin') {
+        setIsAdminMode(true)
+      }
+    }
+  }, [])
 
   if (!user) {
     return <Login onLogin={handleLogin} />;
@@ -1002,7 +1048,7 @@ useEffect(() => {
             TopGlanz Hannover CRM
           </h1>
           <div className="flex items-center space-x-6">
-            <div className="relative">
+            {/* <div className="relative">
               <Button
                 variant="secondary"
                 onClick={() => setShowAdminDialog(true)}
@@ -1014,7 +1060,22 @@ useEffect(() => {
               {isAdminMode && (
                 <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-black bg-green-400" />
               )}
-            </div>
+            </div> */}
+            {user.user.role === 'admin' && (
+              <div className="relative">
+                <Button
+                  variant="secondary"
+                  onClick={handleAdminLogin}
+                  className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md flex items-center"
+                >
+                  <Settings className="w-5 h-5 mr-2 text-gray-300" />
+                  <span>Settings</span>
+                </Button>
+                {isAdminMode && (
+                  <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-black bg-green-400" />
+                )}
+              </div>
+            )}
             <Select
               value={activeSection}
               onChange={(e) => setActiveSection(e.target.value)}
@@ -1040,7 +1101,7 @@ useEffect(() => {
           {activeSection === 'customers' && renderCustomers()}
           {activeSection === 'details' && renderCustomerDetails()}
           {activeSection === 'kpis' && renderKPIs()}
-         
+
         </div>
       </main>
       {renderAdminDialog()}
