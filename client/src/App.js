@@ -468,10 +468,10 @@ function App() {
    
   }
 
-  const handleAdminLogout = () => {
-    setIsAdminMode(false)
-    setIsAdminPortalOpen(false)
-  }
+  // const handleAdminLogout = () => {
+  //   setIsAdminMode(false)
+  //   setIsAdminPortalOpen(false)
+  // }
 
   const filteredCustomers = customers.filter(customer =>
     customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -663,6 +663,7 @@ function App() {
                   if (newIndex < currentIndex && user.user.role !== 'admin') {
                     alert('Only admins can reverse customer stages.');
                   } else {
+                    setNewStage(e.target.value);
                     updateCustomer({ ...selectedCustomer, stage: e.target.value });
                   }
                 }}
