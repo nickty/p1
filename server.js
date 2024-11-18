@@ -78,22 +78,37 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// Initialize admin and user accounts
-const initializeUsers = async () => {
-  const adminExists = await User.findOne({ role: 'admin' });
-  if (!adminExists) {
-    const hashedPassword = await bcrypt.hash('admin123', 10);
-    await User.create({ username: 'admin', password: hashedPassword, role: 'admin' });
-    console.log('Admin account created');
-  }
-
-  const userExists = await User.findOne({ role: 'user' });
-  if (!userExists) {
-    const hashedPassword = await bcrypt.hash('user123', 10);
-    await User.create({ username: 'user', password: hashedPassword, role: 'user' });
-    console.log('User account created');
+// Function to remove all existing users
+const removeAllUsers = async () => {
+  try {
+    await User.deleteMany({});
+    console.log('All users have been removed from the database');
+  } catch (error) {
+    console.error('Error removing users:', error);
   }
 };
+
+// Function to initialize users
+const initializeUsers = async () => {
+  try {
+    // Remove all existing users
+    await removeAllUsers();
+
+    // Create admin user
+    const adminHashedPassword = await bcrypt.hash('TGH650', 10);
+    await User.create({ username: 'admin', password: adminHashedPassword, role: 'admin' });
+    console.log('Admin account created');
+
+    // Create regular user
+    const userHashedPassword = await bcrypt.hash('TGH707', 10);
+    await User.create({ username: 'user', password: userHashedPassword, role: 'user' });
+    console.log('User account created');
+
+  } catch (error) {
+    console.error('Error initializing users:', error);
+  }
+};
+
 
 initializeUsers();
 
