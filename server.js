@@ -298,7 +298,8 @@ app.get('/api/notes/pinned', verifyToken, async (req, res) => {
       salesAgent: note.salesAgent,
       isPinned: note.isPinned,
       isHighlighted: note.isHighlighted,
-      customerName: note.customerId ? note.customerId.name : 'Unknown Customer'
+      customerName: note.customerId ? note.customerId.name : 'Unknown Customer',
+      customerId: note.customerId
     }));
 
     res.json(formattedPinnedNotes);

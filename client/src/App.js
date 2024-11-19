@@ -314,16 +314,16 @@ function App() {
     }
   };
 
-  // const handlePinnedNoteClick = (customerId) => {
-  //   console.log("check id", customerId);
-  //   const customer = customers.find(c => c._id === customerId)
-  //   if (customer) {
-  //     setSelectedCustomer(customer)
-  //     setActiveSection('details')
-  //   } else {
-  //     console.error('Customer not found for the pinned note')
-  //   }
-  // }
+  const handlePinnedNoteClick = (customerId) => {
+    console.log("object", customerId);
+    const customer = customers.find(c => c._id === customerId)
+    if (customer) {
+      setSelectedCustomer(customer)
+      setActiveSection('details')
+    } else {
+      console.log('Customer not found for the pinned note')
+    }
+  }
 
   const renderPinnedNotes = () => (
     <div className="mt-8">
@@ -334,11 +334,11 @@ function App() {
         <p>No pinned notes found.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {pinnedNotes.map(note => (
+          {pinnedNotes?.map(note => (
             <Card
               key={note._id}
               className="p-4 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
-            // onClick={() => handlePinnedNoteClick(note._id)}
+              onClick={() => handlePinnedNoteClick(note.customerId)}
             >
               <div className="flex justify-between items-center mb-2">
                 <span className="font-medium">{note.customerName || 'Unknown Customer'}</span>
