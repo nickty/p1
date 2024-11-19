@@ -152,7 +152,6 @@ function App() {
       const response = await axios.get(`${API_BASE_URL}/customers`, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
-      console.log("see customer", response.data);
       setCustomers(response.data);
     } catch (error) {
       console.error('Error fetching customers:', error);
@@ -315,7 +314,6 @@ function App() {
   };
 
   const handlePinnedNoteClick = (customerId) => {
-    console.log("object", customerId);
     const customer = customers.find(c => c._id === customerId)
     if (customer) {
       setSelectedCustomer(customer)
@@ -338,7 +336,7 @@ function App() {
             <Card
               key={note._id}
               className="p-4 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
-              onClick={() => handlePinnedNoteClick(note.customerId)}
+              onClick={() => handlePinnedNoteClick(note.customerId._id)}
             >
               <div className="flex justify-between items-center mb-2">
                 <span className="font-medium">{note.customerName || 'Unknown Customer'}</span>
