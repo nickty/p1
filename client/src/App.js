@@ -772,12 +772,12 @@ function App() {
                         <span className="text-sm text-gray-500">{new Date(order.date).toLocaleDateString()}</span>
                       </div>
                       <p className="text-sm mt-1">{order.description}</p>
-                      {isAdminMode && (
+                      {/* {isAdminMode && (
                         <div className="mt-2 flex justify-end space-x-2">
                           <Button variant="secondary" onClick={() => setEditingOrder(order)}>Edit</Button>
                           <Button variant="danger" onClick={() => deleteOrder(order._id)}>Delete</Button>
                         </div>
-                      )}
+                      )} */}
                     </div>
                   ))}
                 </div>
