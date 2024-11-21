@@ -408,24 +408,24 @@ function App() {
     }
   };
 
-  const deleteOrder = async (orderId) => {
-    if (selectedCustomer) {
-      try {
-        await axios.delete(`${API_BASE_URL}/orders/${orderId}`, {
-          headers: { Authorization: `Bearer ${user.token}` }
-        })
-        const orderToDelete = selectedCustomer.orders.find(order => order._id === orderId)
-        const updatedCustomer = {
-          ...selectedCustomer,
-          orders: selectedCustomer.orders.filter(order => order._id !== orderId),
-          totalRevenue: selectedCustomer.totalRevenue - orderToDelete.amount
-        }
-        await updateCustomer(updatedCustomer)
-      } catch (error) {
-        console.error('Error deleting order:', error)
-      }
-    }
-  }
+  // const deleteOrder = async (orderId) => {
+  //   if (selectedCustomer) {
+  //     try {
+  //       await axios.delete(`${API_BASE_URL}/orders/${orderId}`, {
+  //         headers: { Authorization: `Bearer ${user.token}` }
+  //       })
+  //       const orderToDelete = selectedCustomer.orders.find(order => order._id === orderId)
+  //       const updatedCustomer = {
+  //         ...selectedCustomer,
+  //         orders: selectedCustomer.orders.filter(order => order._id !== orderId),
+  //         totalRevenue: selectedCustomer.totalRevenue - orderToDelete.amount
+  //       }
+  //       await updateCustomer(updatedCustomer)
+  //     } catch (error) {
+  //       console.error('Error deleting order:', error)
+  //     }
+  //   }
+  // }
 
   const updateOrder = async (updatedOrder) => {
     if (selectedCustomer) {
