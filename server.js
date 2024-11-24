@@ -5,15 +5,19 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { Parser } = require('json2csv');
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Updated CORS configuration to only allow 7websites.com
 const corsOptions = {
-  origin: '*',
+  origin: ['http://7websites.com', 'https://7websites.com', 'https://www.7websites.com', 'http://www.7websites.com'],
   optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
 app.use(cors(corsOptions));
@@ -309,12 +313,37 @@ app.get('/api/notes/pinned', verifyToken, async (req, res) => {
   }
 });
 
+// Updated route for exporting customers as CSV (admin only)
+app.get('/api/export-customers', verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin rights required.' });
+    }
+
+    const customers = await Customer.find().lean();
+    
+    // Include all fields from the customer schema
+    const fields = Object.keys(Customer.schema.paths).filter(field => field !== '__v');
+    
+    const opts = { fields };
+    const parser = new Parser(opts);
+    const csv = parser.parse(customers);
+
+    res.header('Content-Type', 'text/csv');
+    res.attachment('customers.csv');
+    return res.send(csv);
+  } catch (error) {
+    console.error('Error exporting customers:', error);
+    res.status(500).json({ message: 'Error exporting customers' });
+  }
+});
+
 app.use(express.static(path.join(__dirname, 'client/build')));
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 console.log('Server code updated with authentication and user management.');

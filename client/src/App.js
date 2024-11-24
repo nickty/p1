@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import axios from 'axios'
 import { Settings, Pin, Star, Search, X, LogOut } from 'lucide-react'
 import debounce from 'lodash.debounce';
+import ExportButton from './components/ExportButton'
 
 // Assuming you've set up a proxy in package.json or using environment variables
 const API_BASE_URL = 'http://7websites.com/api'
@@ -1061,19 +1062,22 @@ function App() {
               )}
             </div> */}
             {user.user.role === 'admin' && (
-              <div className="relative">
-                <Button
-                  variant="secondary"
-                  onClick={handleAdminLogin}
-                  className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md flex items-center"
-                >
-                  <Settings className="w-5 h-5 mr-2 text-gray-300" />
-                  <span>Settings</span>
-                </Button>
-                {isAdminMode && (
-                  <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-black bg-green-400" />
-                )}
-              </div>
+              <>
+                <div className="relative">
+                  <Button
+                    variant="secondary"
+                    onClick={handleAdminLogin}
+                    className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md flex items-center"
+                  >
+                    <Settings className="w-5 h-5 mr-2 text-gray-300" />
+                    <span>Settings</span>
+                  </Button>
+                  {isAdminMode && (
+                    <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-black bg-green-400" />
+                  )}
+                </div>
+                <ExportButton token={user.token} />
+              </>
             )}
             <Select
               value={activeSection}
