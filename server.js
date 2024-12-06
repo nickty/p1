@@ -14,7 +14,8 @@ const PORT = process.env.PORT || 5000;
 
 // Updated CORS configuration to only allow 7websites.com
 const corsOptions = {
-  origin: ['http://7websites.com', 'https://7websites.com', 'https://www.7websites.com', 'http://www.7websites.com'],
+  // origin: ['http://7websites.com', 'https://7websites.com', 'https://www.7websites.com', 'http://www.7websites.com'],
+  origin: ['*'],
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -344,6 +345,6 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT,'0,0,0,0', () => console.log(`Server running on port ${PORT}`));
 
 console.log('Server code updated with authentication and user management.');
