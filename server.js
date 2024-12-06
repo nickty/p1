@@ -319,6 +319,33 @@ app.put('/api/notes/:id', verifyToken, async (req, res) => {
   }
 });
 
+// New route to delete a specific note
+app.delete('/api/customers/:customerId/notes/:noteId', verifyToken, async (req, res) => {
+  try {
+    const { customerId, noteId } = req.params;
+
+    // Find the note and ensure it belongs to the specified customer
+    const note = await Note.findOne({ _id: noteId, customerId: customerId });
+
+    if (!note) {
+      return res.status(404).json({ message: 'Note not found or does not belong to this customer' });
+    }
+
+    // Delete the note
+    await Note.findByIdAndDelete(noteId);
+
+    // Update the customer's notes array
+    await Customer.findByIdAndUpdate(customerId, {
+      $pull: { notes: noteId }
+    });
+
+    res.json({ message: 'Note deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting note:', error);
+    res.status(500).json({ message: 'Error deleting note', error: error.message });
+  }
+});
+
 // Fetch all pinned notes
 app.get('/api/notes/pinned', verifyToken, async (req, res) => {
   try {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import axios from 'axios'
-import { Settings, Pin, Star, Search, X, LogOut } from 'lucide-react'
+import { Settings, Pin, Star, Search, X, LogOut, Trash2 } from 'lucide-react'
 import debounce from 'lodash.debounce';
 import ExportButton from './components/ExportButton'
 
@@ -324,6 +324,37 @@ function App() {
     }
   }
 
+  const deleteNote = async (noteId, customerId) => {
+    if (!user) return;
+
+    const isConfirmed = window.confirm("Are you sure you want to delete this note? This action cannot be undone.");
+    if (!isConfirmed) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API_BASE_URL}/customers/${customerId}/notes/${noteId}`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+
+      // Update the pinnedNotes state
+      setPinnedNotes(prevNotes => prevNotes.filter(note => note._id !== noteId));
+
+      // Update the selectedCustomer if the deleted note belongs to them
+      if (selectedCustomer && selectedCustomer._id === customerId) {
+        setSelectedCustomer(prevCustomer => ({
+          ...prevCustomer,
+          notes: prevCustomer.notes.filter(note => note._id !== noteId)
+        }));
+      }
+
+      alert('Note deleted successfully');
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      alert(`Failed to delete note: ${error.response?.data?.message || error.message}`);
+    }
+  };
+
   const renderPinnedNotes = () => (
     <div className="mt-8">
       <h2 className="text-2xl font-bold mb-4">Pinned Notes</h2>
@@ -350,10 +381,14 @@ function App() {
               <div className="text-xs text-gray-500">
                 <span>{note.salesAgent}</span>
                 <span className="mx-1">•</span>
-                <span>{new Date(note.timestamp).toLocaleString()}</span>
+                <span>{new Date(note.timestamp).toLocaleString()}</span>              
               </div>
+              <div className="flex space-x-2">
+             
+            </div>
             </Card>
           ))}
+
         </div>
       )}
     </div>
@@ -793,6 +828,25 @@ function App() {
                           <span className="mx-1">•</span>
                           <span>{new Date(note.timestamp).toLocaleString()}</span>
                         </div>
+                        
+              
+              {/* <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteNote(note._id, note.customerId._id);
+                }}
+              >
+                <Trash2 className="w-4 h-4 text-red-500" />
+              </Button> */}
+              {isAdminMode && (
+                        <div className="mt-2 flex justify-end space-x-2">
+                          {/* <Button variant="secondary" onClick={() => setEditingOrder(order)}>Edit</Button> */}
+                          <Button variant="danger" onClick={() => deleteNote(note._id, note.customerId._id)}><Trash2 className="w-4 h-4 text-white-500" /></Button>
+                        </div>
+                      )}
+            
                       </div>
                     ))
                   }
@@ -827,7 +881,7 @@ function App() {
                       {isAdminMode && (
                         <div className="mt-2 flex justify-end space-x-2">
                           {/* <Button variant="secondary" onClick={() => setEditingOrder(order)}>Edit</Button> */}
-                          <Button variant="danger" onClick={() => deleteOrder(order.customerId, order._id)}>Delete</Button>
+                          <Button variant="danger" onClick={() => deleteOrder(order.customerId, order._id)}><Trash2 className="w-4 h-4 text-white-500" /></Button>
                         </div>
                       )}
                     </div>
