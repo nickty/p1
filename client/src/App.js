@@ -325,6 +325,8 @@ function App() {
   }
 
   const deleteNote = async (noteId, customerId) => {
+
+    // console.log("check ", customerId, noteId);
     if (!user) return;
 
     const isConfirmed = window.confirm("Are you sure you want to delete this note? This action cannot be undone.");
@@ -843,7 +845,7 @@ function App() {
               {isAdminMode && (
                         <div className="mt-2 flex justify-end space-x-2">
                           {/* <Button variant="secondary" onClick={() => setEditingOrder(order)}>Edit</Button> */}
-                          <Button variant="danger" onClick={() => deleteNote(note._id, note.customerId._id)}><Trash2 className="w-4 h-4 text-white-500" /></Button>
+                          <Button variant="danger" onClick={() => deleteNote(note._id, note.customerId)}><Trash2 className="w-4 h-4 text-white-500" /></Button>
                         </div>
                       )}
             
