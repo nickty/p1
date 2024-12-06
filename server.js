@@ -252,6 +252,35 @@ app.get('/api/customers/:id/orders', verifyToken, async (req, res) => {
   }
 });
 
+// New route to delete a specific order
+app.delete('/api/customers/:customerId/orders/:orderId', verifyToken, async (req, res) => {
+  try {
+    const { customerId, orderId } = req.params;
+
+    // Find the order and ensure it belongs to the specified customer
+    const order = await Order.findOne({ _id: orderId, customerId: customerId });
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found or does not belong to this customer' });
+    }
+
+    // Delete the order
+    await Order.findByIdAndDelete(orderId);
+
+    // Update the customer's total revenue
+    const customer = await Customer.findById(customerId);
+    if (customer) {
+      customer.totalRevenue -= order.amount;
+      await customer.save();
+    }
+
+    res.json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    res.status(500).json({ message: 'Error deleting order', error: error.message });
+  }
+});
+
 app.put('/api/customers/:id/orders', verifyToken, async (req, res) => {
   const order = new Order({
     ...req.body,

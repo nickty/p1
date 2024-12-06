@@ -409,7 +409,8 @@ function App() {
     }
   };
 
-  // const deleteOrder = async (orderId) => {
+  // const deleteOrder = async (customerId, orderId) => {
+  //   console.log("check order", orderId);
   //   if (selectedCustomer) {
   //     try {
   //       await axios.delete(`${API_BASE_URL}/orders/${orderId}`, {
@@ -427,6 +428,56 @@ function App() {
   //     }
   //   }
   // }
+
+  const deleteOrder = async (customerId, orderId) => {
+    console.log("Attempting to delete order:", orderId, customerId);
+    if (!selectedCustomer || !user) {
+      console.error("No selected customer or user not logged in");
+      return;
+    }
+
+    // Add confirmation alert
+    const isConfirmed = window.confirm("Are you sure you want to delete this order? This action cannot be undone.");
+    if (!isConfirmed) {
+      console.log("Order deletion cancelled by user");
+      return;
+    }
+
+    try {
+      await axios.delete(`${API_BASE_URL}/customers/${customerId}/orders/${orderId}`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+
+      const orderToDelete = selectedCustomer.orders.find(order => order._id === orderId);
+      if (!orderToDelete) {
+        console.error("Order not found in selected customer's orders");
+        return;
+      }
+
+      const updatedCustomer = {
+        ...selectedCustomer,
+        orders: selectedCustomer.orders.filter(order => order._id !== orderId),
+        totalRevenue: selectedCustomer.totalRevenue - orderToDelete.amount
+      };
+
+      // Update the customer in the state
+      setSelectedCustomer(updatedCustomer);
+
+      // Update the customers list to reflect the change
+      setCustomers(prevCustomers => 
+        prevCustomers.map(customer => 
+          customer._id === customerId ? updatedCustomer : customer
+        )
+      );
+
+      console.log("Order deleted successfully");
+      alert("Order deleted successfully");
+
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      alert(`Failed to delete order: ${error.response?.data?.message || error.message}`);
+    }
+  };
 
   const updateOrder = async (updatedOrder) => {
     if (selectedCustomer) {
@@ -773,12 +824,12 @@ function App() {
                         <span className="text-sm text-gray-500">{new Date(order.date).toLocaleDateString()}</span>
                       </div>
                       <p className="text-sm mt-1">{order.description}</p>
-                      {/* {isAdminMode && (
+                      {isAdminMode && (
                         <div className="mt-2 flex justify-end space-x-2">
-                          <Button variant="secondary" onClick={() => setEditingOrder(order)}>Edit</Button>
-                          <Button variant="danger" onClick={() => deleteOrder(order._id)}>Delete</Button>
+                          {/* <Button variant="secondary" onClick={() => setEditingOrder(order)}>Edit</Button> */}
+                          <Button variant="danger" onClick={() => deleteOrder(order.customerId, order._id)}>Delete</Button>
                         </div>
-                      )} */}
+                      )}
                     </div>
                   ))}
                 </div>
